@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Register Player - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Player Registration</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="fullname">Full Name *</label>
+            <input type="text" id="fullname" name="fullname" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">Username *</label>
+            <input type="text" id="username" name="username" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" class="form-control">
+        </div>
+        
+        <div class="form-group">
+            <label for="date_of_birth">Date of Birth *</label>
+            <input type="date" id="date_of_birth" name="date_of_birth" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="jersey_number">Jersey Number</label>
+            <input type="number" id="jersey_number" name="jersey_number" class="form-control" min="1" max="99">
+        </div>
+        
+        <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" class="form-control">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="local_government">Local Government *</label>
+            <select id="local_government" name="local_government" class="form-control" required>
+                <option value="">Select Local Government</option>
+                {% for lg in local_governments %}
+                    <option value="{{ lg }}">{{ lg }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="club">Club *</label>
+            <select id="club" name="club" class="form-control" required disabled>
+                <option value="">Select Club</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="profile_picture">Profile Picture</label>
+            <input type="file" id="profile_picture" name="profile_picture" class="form-control" accept="image/*" data-preview="profilePreview">
+            <img id="profilePreview" src="" alt="Profile Preview" style="max-width: 200px; display: none; margin-top: 10px;">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password *</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        
+        <button type="submit" class="btn">Register</button>
+    </form>
+    
+    <p style="margin-top: 1rem;">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fix the element ID - remove the typo
+    const localGovSelect = document.getElementById('local_government');
+    const clubSelect = document.getElementById('club');
+
+    if (localGovSelect && clubSelect) {
+        console.log('Club dropdown system initialized');
+        clubSelect.disabled = true;
+
+        localGovSelect.addEventListener('change', function() {
+            const selectedLG = this.value;
+            console.log('Selected LG:', selectedLG);
+
+            // Clear and show loading
+            clubSelect.innerHTML = '<option value="">Loading clubs...</option>';
+            clubSelect.disabled = true;
+
+            if (selectedLG) {
+                console.log('Fetching clubs for:', selectedLG);
+                
+                // FIX: Use backticks for template literal
+                fetch(`/get_clubs/${encodeURIComponent(selectedLG)}`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(clubs => {
+                    console.log('Received clubs:', clubs);
+                    
+                    clubSelect.innerHTML = "";
+                    
+                    if (clubs && clubs.length > 0) {
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = "";
+                        defaultOption.textContent = 'Select Club';
+                        clubSelect.appendChild(defaultOption);
+
+                        clubs.forEach((club) => {
+                            const option = document.createElement('option');
+                            option.value = club;
+                            option.textContent = club;
+                            clubSelect.appendChild(option);
+                        });
+                        
+                        clubSelect.disabled = false;
+                        console.log('Clubs loaded successfully');
+                    } else {
+                        const noClubOption = document.createElement('option');
+                        noClubOption.value = "";
+                        noClubOption.textContent = 'No clubs found in this area';
+                        clubSelect.appendChild(noClubOption);
+                        clubSelect.disabled = true;
+                        console.log('No clubs found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    clubSelect.innerHTML = "";
+                    const errorOption = document.createElement('option');
+                    errorOption.value = "";
+                    errorOption.textContent = 'Error loading clubs';
+                    clubSelect.appendChild(errorOption);
+                    clubSelect.disabled = true;
+                });
+            } else {
+                clubSelect.innerHTML = '<option value="">Select Local Government first</option>';
+                clubSelect.disabled = true;
+            }
+        });
+    } else {
+        console.error('Could not find dropdown elements');
+    }
+
+    // Image preview functionality
+    const profilePictureInput = document.getElementById('profile_picture');
+    const profilePreview = document.getElementById('profilePreview');
+
+    if (profilePictureInput && profilePreview) {
+        profilePictureInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePreview.src = e.target.result;
+                    profilePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

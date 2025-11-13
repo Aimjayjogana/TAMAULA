@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Competition Registration - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Register for Competition</h2>
+    
+    {% if competitions %}
+    <form method="POST">
+        <div class="form-group">
+            <label for="competition_id">Select Competition *</label>
+            <select id="competition_id" name="competition_id" class="form-control" required>
+                <option value="">Choose a competition</option>
+                {% for competition in competitions %}
+                <option value="{{ competition.id }}">{{ competition.name }} ({{ competition.start_date }} to {{ competition.end_date }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="card" style="margin: 1.5rem 0; padding: 1.5rem; background: #f8fafc;">
+            <h4>Registration Requirements:</h4>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Club must be properly registered with TAMAULA</li>
+                <li>Minimum of 15 players in your roster</li>
+                <li>All player information must be up to date</li>
+                <li>Registration fee may apply (varies by competition)</li>
+            </ul>
+        </div>
+
+        <button type="submit" class="btn">Submit Registration</button>
+    </form>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 2rem;">
+        <h3>No Active Competitions</h3>
+        <p>There are currently no competitions open for registration.</p>
+        <p>Please check back later for new competition announcements.</p>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('club_dashboard') }}" class="btn" style="background: var(--gray);">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Matches - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Football Matches</h1>
+        <p>Follow all the latest matches and results</p>
+    </div>
+
+    <!-- Matches List -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Competition</th>
+                    <th>Match</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for match in matches %}
+                <tr>
+                    <td>
+                        {{ match.match_date }}<br>
+                        <small style="color: var(--gray);">{{ match.match_time if match.match_time else 'Time TBA' }}</small>
+                    </td>
+                    <td>{{ match.competition_name }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="{% if match.home_club_logo %}{{ url_for('static', filename='images/uploads/' + match.home_club_logo) }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                                 alt="{{ match.home_club_name }}" 
+                                 style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;">
+                            <strong>{{ match.home_club_name }}</strong>
+                        </div>
+                        <div style="text-align: center; color: var(--gray); font-size: 0.8rem;">VS</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="{% if match.away_club_logo %}{{ url_for('static', filename='images/uploads/' + match.away_club_logo) }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                                 alt="{{ match.away_club_name }}" 
+                                 style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;">
+                            <strong>{{ match.away_club_name }}</strong>
+                        </div>
+                    </td>
+                    <td>{{ match.location or 'TBA' }}</td>
+                    <td>
+                        <span style="color: {% if match.status == 'completed' %}green
+                                          {% elif match.status == 'ongoing' %}orange
+                                          {% else %}blue{% endif %}; font-weight: 500;">
+                            {{ match.status|title }}
+                        </span>
+                    </td>
+                    <td style="font-weight: bold; font-size: 1.1rem;">
+                        {{ match.home_score }} - {{ match.away_score }}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('public_match_details', match_id=match.id) }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not matches %}
+    <div style="text-align: center; padding: 3rem;">
+        <h3>No Matches Available</h3>
+        <p>Check back later for upcoming matches.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.data-table img {
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .data-table {
+        font-size: 0.8rem;
+    }
+    
+    .data-table td:nth-child(3) {
+        min-width: 150px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}{{ match.home_club_name }} vs {{ match.away_club_name }} - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Match Details</h1>
+        <p>{{ match.competition_name }}</p>
+    </div>
+
+    <!-- Match Header -->
+    <div class="match-header" style="text-align: center; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem;">
+            <!-- Home Team -->
+            <div>
+                <img src="{% if match.home_club_logo %}{{ url_for('static', filename='images/uploads/' + match.home_club_logo) }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                     alt="{{ match.home_club_name }}" 
+                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;">
+                <h3>{{ match.home_club_name }}</h3>
+            </div>
+
+            <!-- Match Score & Info -->
+            <div>
+                <div style="font-size: 3rem; font-weight: bold; margin-bottom: 1rem;">
+                    {{ match.home_score }} - {{ match.away_score }}
+                </div>
+                <div style="color: var(--gray); margin-bottom: 0.5rem;">
+                    {{ match.match_date }} {% if match.match_time %}{{ match.match_time }}{% endif %}
+                </div>
+                <div style="color: var(--primary); font-weight: 500; margin-bottom: 0.5rem;">
+                    {{ match.location or 'Venue TBA' }}
+                </div>
+                <div style="color: {% if match.status == 'completed' %}green
+                                 {% elif match.status == 'ongoing' %}orange
+                                 {% else %}blue{% endif %}; font-weight: 500;">
+                    {{ match.status|title }}
+                </div>
+            </div>
+
+            <!-- Away Team -->
+            <div>
+                <img src="{% if match.away_club_logo %}{{ url_for('static', filename='images/uploads/' + match.away_club_logo) }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                     alt="{{ match.away_club_name }}" 
+                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;">
+                <h3>{{ match.away_club_name }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Events Timeline -->
+    {% if events %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Match Events</h3>
+        <div class="timeline">
+            {% for event in events %}
+            <div class="timeline-event" style="display: flex; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0;">
+                <div style="width: 60px; text-align: center; font-weight: bold; color: var(--primary);">
+                    {{ event.minute }}'
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: {% if event.event_type == 'goal' %}green
+                                      {% elif event.event_type == 'assist' %}blue
+                                      {% elif event.event_type == 'yellow_card' %}orange
+                                      {% else %}red{% endif %}; font-weight: 500;">
+                        {{ event.event_type|title|replace('_', ' ') }}
+                    </span>
+                    <span>{{ event.player_name }} (#{{ event.jersey_number }})</span>
+                    <span style="color: var(--gray); font-size: 0.9rem;">{{ event.club_name }}</span>
+                    {% if event.description %}
+                    <span style="color: var(--gray); font-size: 0.9rem;">- {{ event.description }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lineups -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Home Team Lineup -->
+        <div class="card">
+            <h3>{{ match.home_club_name }} Lineup</h3>
+            {% if home_lineup %}
+            <div class="table-container">
+                <table class="data-table" style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Player</th>
+                            <th>Number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in home_lineup %}
+                        <tr>
+                            <td>{{ player.position }}</td>
+                            <td>{{ player.fullname }}</td>
+                            <td>#{{ player.jersey_number }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="text-align: center; color: var(--gray); padding: 1rem;">Lineup not available</p>
+            {% endif %}
+        </div>
+
+        <!-- Away Team Lineup -->
+        <div class="card">
+            <h3>{{ match.away_club_name }} Lineup</h3>
+            {% if away_lineup %}
+            <div class="table-container">
+                <table class="data-table" style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Player</th>
+                            <th>Number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in away_lineup %}
+                        <tr>
+                            <td>{{ player.position }}</td>
+                            <td>{{ player.fullname }}</td>
+                            <td>#{{ player.jersey_number }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="text-align: center; color: var(--gray); padding: 1rem;">Lineup not available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Match Statistics -->
+    <div class="card">
+        <h3>Match Information</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+                <strong>Competition:</strong> {{ match.competition_name }}
+            </div>
+            <div>
+                <strong>Date:</strong> {{ match.match_date }}
+            </div>
+            <div>
+                <strong>Time:</strong> {{ match.match_time if match.match_time else 'TBA' }}
+            </div>
+            <div>
+                <strong>Location:</strong> {{ match.location if match.location else 'TBA' }}
+            </div>
+            <div>
+                <strong>Status:</strong> 
+                <span style="color: {% if match.status == 'completed' %}green
+                                  {% elif match.status == 'ongoing' %}orange
+                                  {% else %}blue{% endif %};">
+                    {{ match.status|title }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.match-header {
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+}
+
+.timeline-event:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .match-header > div {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .match-header > div > div:first-child,
+    .match-header > div > div:last-child {
+        order: 1;
+    }
+    
+    .match-header > div > div:nth-child(2) {
+        order: 2;
+    }
+    
+    .lineup-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

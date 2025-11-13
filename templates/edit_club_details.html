@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Club Details - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Edit Club Details</h1>
+        <p>Update your club information</p>
+    </div>
+
+    <div class="form-container">
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Club Name *</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ club.name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="local_government">Local Government *</label>
+                <select id="local_government" name="local_government" class="form-control" required>
+                    {% for lg in local_governments %}
+                        <option value="{{ lg }}" {% if lg == club.local_government %}selected{% endif %}>{{ lg }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ club.email }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" class="form-control" value="{{ club.phone or '' }}">
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn">Update Details</button>
+                <a href="{{ url_for('club_dashboard') }}" class="btn" style="background: var(--gray);">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Matches - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Match Management</h1>
+        <p>Create and manage football matches</p>
+    </div>
+
+    <!-- Create Match Form -->
+    <div class="form-container" style="margin-bottom: 2rem;">
+        <h3>Create New Match</h3>
+        <form id="createMatchForm">
+            <div class="form-group">
+                <label for="competition_id">Competition </label>
+                <select id="competition_id" name="competition_id" class="form-control">
+                    <option value="">Select Competition</option>
+                    {% for competition in competitions %}
+                    <option value="{{ competition.id }}">{{ competition.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="home_club_id">Home Club *</label>
+                    <select id="home_club_id" name="home_club_id" class="form-control" required>
+                        <option value="">Select Home Club</option>
+                        {% for club in clubs %}
+                        <option value="{{ club.id }}">{{ club.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="away_club_id">Away Club *</label>
+                    <select id="away_club_id" name="away_club_id" class="form-control" required>
+                        <option value="">Select Away Club</option>
+                        {% for club in clubs %}
+                        <option value="{{ club.id }}">{{ club.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="match_date">Match Date *</label>
+                    <input type="date" id="match_date" name="match_date" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="match_time">Match Time *</label>
+                    <input type="time" id="match_time" name="match_time" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" name="location" class="form-control" placeholder="e.g., Sani Abacha Stadium">
+            </div>
+
+            <button type="submit" class="btn">Create Match</button>
+        </form>
+    </div>
+
+    <!-- Existing Matches Table -->
+    <h3>All Matches</h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Competition</th>
+                    <th>Match</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for match in matches %}
+                <tr>
+                    <td>
+                        {{ match.match_date }}<br>
+                        <small style="color: var(--gray);">{{ match.match_time if match.match_time else 'Time TBA' }}</small>
+                    </td>
+                    <td>{{ match.competition_name }}</td>
+                    <td>
+                        <strong>{{ match.home_club_name }}</strong> vs <strong>{{ match.away_club_name }}</strong>
+                    </td>
+                    <td>{{ match.location or 'TBA' }}</td>
+                    <td>
+                        <span style="color: {% if match.status == 'completed' %}green
+                                          {% elif match.status == 'ongoing' %}orange
+                                          {% else %}blue{% endif %};">
+                            {{ match.status|title }}
+                        </span>
+                    </td>
+                    <td>{{ match.home_score }} - {{ match.away_score }}</td>
+                    <td>
+                        <a href="{{ url_for('admin_match_events', match_id=match.id) }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                            Events
+                        </a>
+                        <button class="btn update-score" data-match-id="{{ match.id }}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: var(--accent);">
+                            Score
+                        </button>
+                        <a href="{{ url_for('public_match_details', match_id=match.id) }}" class="btn" style="padding: 0.25rem; font-size: 0.8rem; background: var(--success); margin-top: 0.35rem;"></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Update Score Modal -->
+<div id="scoreModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 400px;">
+        <h3>Update Match Score</h3>
+        <form id="scoreForm">
+            <input type="hidden" id="modalMatchId">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; text-align: center;">
+                <div>
+                    <h4 id="homeTeamName"></h4>
+                    <input type="number" id="homeScore" name="home_score" class="form-control" min="0" value="0" style="text-align: center; font-size: 1.2rem;">
+                </div>
+                
+                <div>
+                    <h4 id="awayTeamName"></h4>
+                    <input type="number" id="awayScore" name="away_score" class="form-control" min="0" value="0" style="text-align: center; font-size: 1.2rem;">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="matchStatus">Match Status</label>
+                <select id="matchStatus" name="status" class="form-control">
+                    <option value="scheduled">Scheduled</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn" style="flex: 1;">Update Score</button>
+                <button type="button" id="closeScoreModal" class="btn" style="background: var(--gray); flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+<script>
+// Update Score Functionality
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('update-score')) {
+        const matchId = e.target.getAttribute('data-match-id');
+        const row = e.target.closest('tr');
+        
+        // Get match details from the table
+        const teamsCell = row.querySelector('td:nth-child(3)');
+        const teamsText = teamsCell.textContent.trim();
+        const [homeTeam, awayTeam] = teamsText.split(' vs ').map(team => team.replace('vs', '').trim());
+        
+        const scoreCell = row.querySelector('td:nth-child(6)');
+        const currentScore = scoreCell.textContent.trim();
+        const [currentHomeScore, currentAwayScore] = currentScore.split(' - ').map(s => s.trim());
+        
+        const statusCell = row.querySelector('td:nth-child(5)');
+        const currentStatus = statusCell.textContent.trim().toLowerCase();
+        
+        // Populate modal
+        document.getElementById('modalMatchId').value = matchId;
+        document.getElementById('homeTeamName').textContent = homeTeam;
+        document.getElementById('awayTeamName').textContent = awayTeam;
+        document.getElementById('homeScore').value = currentHomeScore || '0';
+        document.getElementById('awayScore').value = currentAwayScore || '0';
+        document.getElementById('matchStatus').value = currentStatus;
+        
+        // Show modal
+        document.getElementById('scoreModal').style.display = 'flex';
+    }
+});
+
+// Close modal
+document.getElementById('closeScoreModal').addEventListener('click', function() {
+    document.getElementById('scoreModal').style.display = 'none';
+});
+
+// Submit score form
+document.getElementById('scoreForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const matchId = document.getElementById('modalMatchId').value;
+    const formData = new FormData(this);
+    
+    fetch(`/admin/update_match_score/${matchId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            document.getElementById('scoreModal').style.display = 'none';
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error: ' + error.message);
+    });
+});
+
+// Close modal when clicking outside
+document.getElementById('scoreModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// Create Match Form (keep this as is)
+document.getElementById('createMatchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{{ url_for("create_match") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error: ' + error.message);
+    });
+});
+
+// Set minimum date to today
+document.getElementById('match_date').min = new Date().toISOString().split('T')[0];
+</script>
+
+<style>
+/* Responsive design for time input */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .form-container > div {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Fix for update score button */
+.update-score {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Ensure buttons are clickable */
+.btn {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+/* Remove any overlays that might block clicking */
+.data-table td:last-child {
+    position: relative;
+    z-index: 2;
+}
+
+</style>
+{% endblock %}

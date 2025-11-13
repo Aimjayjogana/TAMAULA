@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Clubs - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Club Registration Approvals</h1>
+        <p>Review and approve pending club registrations</p>
+    </div>
+
+    <!-- Pending Clubs -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Pending Approval ({{ pending_clubs|length }})</h3>
+        
+        {% if pending_clubs %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Local Government</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for club in pending_clubs %}
+                    <tr>
+                        <td>
+                            <strong>{{ club.name }}</strong>
+                            {% if club.logo %}
+                            <br>
+                            <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" 
+                                 alt="{{ club.name }} Logo" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-top: 0.5rem;">
+                            {% endif %}
+                        </td>
+                        <td>{{ club.local_government }}</td>
+                        <td>{{ club.email }}</td>
+                        <td>{{ club.phone or 'N/A' }}</td>
+                        <td>{{ club.registration_date[:10] }}</td>
+                        <td>
+                            <button class="btn approve-club" data-club-id="{{ club.id }}" 
+                                    style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                Approve
+                            </button>
+                            <button class="btn reject-club" data-club-id="{{ club.id }}" 
+                                    style="background: var(--error); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                Reject
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">No pending club registrations.</p>
+        {% endif %}
+    </div>
+
+    <!-- Approved Clubs -->
+    <div class="card">
+        <h3>Approved Clubs ({{ approved_clubs|length }})</h3>
+        
+        {% if approved_clubs %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Local Government</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Registration Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for club in approved_clubs %}
+                    <tr>
+                        <td>
+                            <strong>{{ club.name }}</strong>
+                            {% if club.logo %}
+                            <br>
+                            <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" 
+                                 alt="{{ club.name }} Logo" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-top: 0.5rem;">
+                            {% endif %}
+                        </td>
+                        <td>{{ club.local_government }}</td>
+                        <td>{{ club.email }}</td>
+                        <td>{{ club.phone or 'N/A' }}</td>
+                        <td>{{ club.registration_date[:10] }}</td>
+                        <td>
+                            <span style="color: var(--success); font-weight: 500;">Approved</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">No approved clubs yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Approve club
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('approve-club')) {
+        const clubId = e.target.getAttribute('data-club-id');
+        
+        if (confirm('Are you sure you want to approve this club?')) {
+            fetch(`/admin/approve_club/${clubId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ Error: ' + error.message);
+            });
+        }
+    }
+    
+    // Reject club
+    if (e.target.classList.contains('reject-club')) {
+        const clubId = e.target.getAttribute('data-club-id');
+        
+        if (confirm('Are you sure you want to reject this club? This action cannot be undone.')) {
+            fetch(`/admin/reject_club/${clubId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ Error: ' + error.message);
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Login - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Login to TAMAULA</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="user_type">Login As</label>
+            <select id="user_type" name="user_type" class="form-control" required>
+                <option value="player">Player</option>
+                <option value="club">Club</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">
+                <span id="username-label">Username</span>
+            </label>
+            <input type="text" id="username" name="username" class="form-control" required 
+                   placeholder="Enter your username or club name">
+            <small id="username-help" class="form-text">
+                For players: Enter your username | For clubs: Enter your club name
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        
+        <button type="submit" class="btn">Login</button>
+    </form>
+    
+    <p style="margin-top: 1rem;">
+        Don't have an account? 
+        <a href="{{ url_for('register_player') }}">Register as Player</a> or 
+        <a href="{{ url_for('register_club') }}">Register as Club</a>
+    </p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userTypeSelect = document.getElementById('user_type');
+    const usernameLabel = document.getElementById('username-label');
+    const usernameHelp = document.getElementById('username-help');
+    
+    userTypeSelect.addEventListener('change', function() {
+        if (this.value === 'club') {
+            usernameLabel.textContent = 'Club Name';
+            usernameHelp.textContent = 'Enter your registered club name';
+        } else {
+            usernameLabel.textContent = 'Username';
+            usernameHelp.textContent = 'For players: Enter your username | For clubs: Enter your club name';
+        }
+    });
+});
+</script>
+{% endblock %}

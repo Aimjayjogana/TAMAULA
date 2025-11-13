@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAMAULA - {% block title %}Football Platform{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <div style="text-align: center; margin-bottom: 2rem;">
+        <img src="{{ url_for('static', filename='images/logo/tamaula.png') }}" 
+             alt="TAMAULA Logo" 
+             style="height: 60px; width: auto; margin-bottom: 1rem;"
+             class="logo-image"
+        >
+    </div>
+                <div class="nav-logo">
+                    <a href="{{ url_for('index') }}">TAMAULA™</a>
+                </div>
+                <div class="nav-menu">
+    <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+    <a href="{{ url_for('players') }}" class="nav-link">Players</a>
+    <a href="{{ url_for('clubs') }}" class="nav-link">Clubs</a>
+    <a href="{{ url_for('public_matches') }}" class="nav-link">matches</a>
+    <a href="{{ url_for('competitions') }}" class="nav-link">Competitions</a>
+    <a href="{{ url_for('lineup') }}" class="nav-link">Lineups</a>
+    {% if session.user_type == 'admin' %}
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">Admin Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="nav-link">Logout (Admin)</a>
+    {% elif session.user_id %}
+        {% if session.user_type == 'player' %}
+            <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+        {% else %}
+            <a href="{{ url_for('club_dashboard') }}" class="nav-link">Dashboard</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+        <a href="{{ url_for('register_player') }}" class="nav-link">Register Player</a>
+        <a href="{{ url_for('public_transfers') }}" class="nav-link">Transfers</a>
+        <a href="{{ url_for('register_club') }}" class="nav-link">Register Club</a>
+        <a href="{{ url_for('admin_login') }}" class="nav-link" style="color: #ffd700;">Admin</a>
+    {% endif %}
+</div>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>TAMAULA</h3>
+                    <p>Connecting football talent across Kano State. Join our platform to showcase your skills and connect with clubs and competitions.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+                        <a href="{{ url_for('players') }}" class="nav-link">Players</a>
+                        <a href="{{ url_for('clubs') }}" class="nav-link">Clubs</a>
+                        <a href="{{ url_for('competitions') }}" class="nav-link">Competitions</a>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> Aimjayjogana@gmail.com</li>
+                        <li><i class="fas fa-phone"></i> +234 912 864 0214</li>
+                        <li><i class="fas fa-map-marker-alt"></i>Jogana, Gezawa Kano, Kano State, Nigeria</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 TAMAULA Football Platform. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

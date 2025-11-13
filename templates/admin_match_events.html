@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Match Events - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Match Events - {{ match.home_club_name }} vs {{ match.away_club_name }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Add New Event</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/admin/add_match_event/{{ match.id }}">
+                <input type="hidden" name="match_id" value="{{ match.id }}">
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="player_id">Player *</label>
+                            <select id="player_id" name="player_id" class="form-control" required>
+                                <option value="">Select Player</option>
+                                <optgroup label="{{ match.home_club_name }}">
+                                    {% for player in home_players %}
+                                    <option value="{{ player.id }}">{{ player.fullname }} (#{{ player.jersey_number or 'N/A' }})</option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="{{ match.away_club_name }}">
+                                    {% for player in away_players %}
+                                    <option value="{{ player.id }}">{{ player.fullname }} (#{{ player.jersey_number or 'N/A' }})</option>
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="event_type">Event Type *</label>
+                            <select id="event_type" name="event_type" class="form-control" required>
+                                <option value="">Select Event</option>
+                                <option value="goal">Goal</option>
+                                <option value="assist">Assist</option>
+                                <option value="yellow_card">Yellow Card</option>
+                                <option value="red_card">Red Card</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="minute">Minute *</label>
+                            <input type="number" id="minute" name="minute" class="form-control" min="1" max="120" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" name="description" class="form-control" placeholder="e.g., Penalty, Free Kick">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>Match Events</h5>
+        </div>
+        <div class="card-body">
+            {% if events %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Minute</th>
+                            <th>Player</th>
+                            <th>Club</th>
+                            <th>Event</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in events %}
+                        <tr>
+                            <td>{{ event.minute }}'</td>
+                            <td>
+                                <strong>{{ event.player_name }}</strong>
+                                {% if event.jersey_number %}(#{{ event.jersey_number }}){% endif %}
+                            </td>
+                            <td>{{ event.club_name }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if event.event_type == 'goal' %}badge-success
+                                    {% elif event.event_type == 'assist' %}badge-primary
+                                    {% elif event.event_type == 'yellow_card' %}badge-warning
+                                    {% else %}badge-danger{% endif %}">
+                                    {{ event.event_type|replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                            <td>{{ event.description or '-' }}</td>
+                            <td>
+                                <form method="POST" action="/admin/delete_match_event/{{ event.id }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                            onclick="return confirm('Delete this event?')">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">No events recorded for this match yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

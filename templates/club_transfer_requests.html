@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer Requests - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Transfer Requests</h1>
+        <p>Manage player transfer requests</p>
+    </div>
+
+    <!-- Outgoing Transfers Section -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Outgoing Transfers</h3>
+        <p>Players requesting to leave your club</p>
+        
+        {% if outgoing %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Destination Club</th>
+                        <th>Request Date</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in outgoing %}
+                    <tr>
+                        <td>{{ transfer.fullname }}</td>
+                        <td>{{ transfer.to_club_name }}</td>
+                        <td>{{ transfer.request_date }}</td>
+                        <td>{{ transfer.reason or 'No reason provided' }}</td>
+                        <td>
+                            <a href="{{ url_for('club_approve_transfer', transfer_id=transfer.id) }}" 
+                               class="btn" style="background: var(--success); margin-right: 0.5rem;">
+                                Approve
+                            </a>
+                            <a href="{{ url_for('club_reject_transfer', transfer_id=transfer.id) }}" 
+                               class="btn" style="background: var(--error);">
+                                Reject
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">
+            No outgoing transfer requests
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Incoming Transfers Section -->
+    <div class="card">
+        <h3>Incoming Transfers</h3>
+        <p>Players requesting to join your club</p>
+        
+        {% if incoming %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Current Club</th>
+                        <th>Request Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in incoming %}
+                    <tr>
+                        <td>{{ transfer.fullname }}</td>
+                        <td>{{ transfer.from_club_name }}</td>
+                        <td>{{ transfer.request_date }}</td>
+                        <td>{{ transfer.reason or 'No reason provided' }}</td>
+                        <td>
+                            {% if transfer.status == 'pending' %}
+                            <span style="color: var(--warning);">Waiting for source club</span>
+                            {% elif transfer.status == 'approved_by_from' %}
+                            <span style="color: var(--success);">Ready to approve</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transfer.status == 'approved_by_from' %}
+                            <a href="{{ url_for('club_approve_transfer', transfer_id=transfer.id) }}" 
+                               class="btn" style="background: var(--success); margin-right: 0.5rem;">
+                                Approve
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('club_reject_transfer', transfer_id=transfer.id) }}" 
+                               class="btn" style="background: var(--error);">
+                                Reject
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">
+            No incoming transfer requests
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

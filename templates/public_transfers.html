@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Player Transfers - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Player Transfers</h1>
+        <p>Latest transfer activity in Kano State Football</p>
+    </div>
+
+    <!-- Completed Transfers Section -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Completed Transfers</h3>
+        <p>Recently finalized player transfers</p>
+        
+        {% if completed_transfers %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>From Club</th>
+                        <th>To Club</th>
+                        <th>Transfer Date</th>
+                        <th>Local Government</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in completed_transfers %}
+                    <tr>
+                        <td>
+                            <strong>{{ transfer.player_name }}</strong>
+                            {% if transfer.jersey_number %}
+                            <br><small>#{{ transfer.jersey_number }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ transfer.from_club_name }}</td>
+                        <td>
+                            <strong style="color: var(--success);">{{ transfer.to_club_name }}</strong>
+                        </td>
+                        <td>{{ transfer.request_date }}</td>
+                        <td>
+                            {{ transfer.from_lg }} → {{ transfer.to_lg }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--gray);">
+            <p>No completed transfers yet</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pending Transfers Section -->
+    <div class="card">
+        <h3>Pending Transfers</h3>
+        <p>Transfer requests awaiting approval</p>
+        
+        {% if pending_transfers %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Current Club</th>
+                        <th>Requested Club</th>
+                        <th>Request Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in pending_transfers %}
+                    <tr>
+                        <td>
+                            <strong>{{ transfer.player_name }}</strong>
+                            {% if transfer.jersey_number %}
+                            <br><small>#{{ transfer.jersey_number }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ transfer.from_club_name }}</td>
+                        <td>{{ transfer.to_club_name }}</td>
+                        <td>{{ transfer.request_date }}</td>
+                        <td>
+                            {% if transfer.status == 'pending' %}
+                            <span style="color: var(--warning);">Waiting for source club</span>
+                            {% elif transfer.status == 'approved_by_from' %}
+                            <span style="color: var(--success);">Waiting for destination club</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--gray);">
+            <p>No pending transfer requests</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Transfer Statistics -->
+    <div class="stats-grid" style="margin-top: 2rem;">
+        <div class="stat-card">
+            <div class="value">{{ completed_transfers|length }}</div>
+            <div class="label">Completed Transfers</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ pending_transfers|length }}</div>
+            <div class="label">Pending Transfers</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">
+                {% set unique_players = [] %}
+                {% for transfer in completed_transfers %}
+                    {% if transfer.player_name not in unique_players %}
+                        {% set _ = unique_players.append(transfer.player_name) %}
+                    {% endif %}
+                {% endfor %}
+                {{ unique_players|length }}
+            </div>
+            <div class="label">Players Transferred</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">
+                {% set unique_clubs = [] %}
+                {% for transfer in completed_transfers %}
+                    {% if transfer.from_club_name not in unique_clubs %}
+                        {% set _ = unique_clubs.append(transfer.from_club_name) %}
+                    {% endif %}
+                    {% if transfer.to_club_name not in unique_clubs %}
+                        {% set _ = unique_clubs.append(transfer.to_club_name) %}
+                    {% endif %}
+                {% endfor %}
+                {{ unique_clubs|length }}
+            </div>
+            <div class="label">Clubs Involved</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

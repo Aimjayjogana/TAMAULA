@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Competition Groups - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Manage Groups: {{ competition.name }}</h1>
+        <p>Create groups and assign clubs for {{ competition.name }}</p>
+    </div>
+
+    <!-- Create New Group Section -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Create New Group</h3>
+        <form id="createGroupForm">
+            <input type="hidden" name="competition_id" value="{{ competition.id }}">
+            <div class="form-group">
+                <label for="group_name">Group Name</label>
+                <input type="text" id="group_name" name="group_name" class="form-control" 
+                       placeholder="Enter group name (e.g., Group A, Group B)" required>
+            </div>
+            <button type="submit" class="btn">Create Group</button>
+        </form>
+    </div>
+
+    <!-- Groups Management Section -->
+    {% for group in groups %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+            <h3>{{ group.group_name }}</h3>
+            <span class="badge" style="background: var(--primary); color: white; padding: 0.5rem 1rem; border-radius: 20px;">
+                {{ group_assignments[group.id]|length }} Clubs
+            </span>
+        </div>
+
+        <!-- Clubs in this Group -->
+        <h4>Clubs in {{ group.group_name }}</h4>
+        {% if group_assignments[group.id] %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Local Government</th>
+                        <th>Assigned Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in group_assignments[group.id] %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if assignment.logo %}
+                                <img src="{{ url_for('static', filename='images/uploads/' + assignment.logo) }}" 
+                                     alt="{{ assignment.club_name }}" style="width: 30px; height: 30px; border-radius: 50%;">
+                                {% endif %}
+                                {{ assignment.club_name }}
+                            </div>
+                        </td>
+                        <td>{{ assignment.local_government }}</td>
+                        <td>{{ assignment.assigned_date }}</td>
+                        <td>
+                            <button class="btn" style="background: var(--error);" 
+                                    onclick="removeClubFromGroup({{ assignment.id }})">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">
+            No clubs assigned to this group yet
+        </p>
+        {% endif %}
+
+        <!-- Assign Club to Group -->
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+            <h4>Assign Club to {{ group.group_name }}</h4>
+            <form class="assignClubForm" data-group-id="{{ group.id }}">
+                <input type="hidden" name="competition_id" value="{{ competition.id }}">
+                <input type="hidden" name="group_id" value="{{ group.id }}">
+                <div class="form-group">
+                    <label for="club_id_{{ group.id }}">Select Club</label>
+                    <select id="club_id_{{ group.id }}" name="club_id" class="form-control" required>
+                        <option value="">Choose a club...</option>
+                        {% for club in registered_clubs %}
+                        <option value="{{ club.id }}">
+                            {{ club.name }} - {{ club.local_government }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn">Assign to {{ group.group_name }}</button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div style="text-align: center; padding: 3rem;">
+            <h3>No Groups Created Yet</h3>
+            <p>Create your first group to start organizing the competition</p>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Available Clubs Section -->
+    <div class="card">
+        <h3>Available Clubs ({{ registered_clubs|length }})</h3>
+        <p>All clubs registered and approved for this competition</p>
+        
+        {% if registered_clubs %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Local Government</th>
+                        <th>Email</th>
+                        <th>Registration Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for club in registered_clubs %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if club.logo %}
+                                <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" 
+                                     alt="{{ club.name }}" style="width: 30px; height: 30px; border-radius: 50%;">
+                                {% endif %}
+                                {{ club.name }}
+                            </div>
+                        </td>
+                        <td>{{ club.local_government }}</td>
+                        <td>{{ club.email }}</td>
+                        <td>{{ club.registration_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">
+            No clubs registered for this competition yet
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Create new group
+document.getElementById('createGroupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('{{ url_for("admin_create_group", competition_id=competition.id) }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error creating group: ' + error);
+    });
+});
+
+// Assign club to group
+document.querySelectorAll('.assignClubForm').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const groupId = this.dataset.groupId;
+        
+        fetch('{{ url_for("admin_assign_club_to_group") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error assigning club: ' + error);
+        });
+    });
+});
+
+// Remove club from group
+function removeClubFromGroup(assignmentId) {
+    if (confirm('Are you sure you want to remove this club from the group?')) {
+        fetch('{{ url_for("admin_remove_club_from_group", assignment_id=0) }}'.replace('0', assignmentId), {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error removing club: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

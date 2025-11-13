@@ -1,0 +1,551 @@
+{
+  "clubs": [
+    {
+      "id": 1,
+      "name": "power boys",
+      "local_government": "Gezawa",
+      "email": "aimjay@gmail.com",
+      "phone": "09128640214",
+      "password": "jogana",
+      "logo": "power_boys_IMG-20250330-WA0101.jpg",
+      "registration_date": "2025-10-17 23:38:17"
+    },
+    {
+      "id": 2,
+      "name": "kano dai",
+      "local_government": "Gabasawa",
+      "email": "oscar@gmail.com",
+      "phone": "1234567890",
+      "password": "test123",
+      "logo": "kano_dai_IMG_20250512_161628.jpg",
+      "registration_date": "2025-10-17 23:47:09"
+    },
+    {
+      "id": 3,
+      "name": "Jogana United",
+      "local_government": "Garun Mallam",
+      "email": "abdul22@gmail.com",
+      "phone": "1234567899",
+      "password": "jogana",
+      "logo": "Jogana_United_IMG_20250427_111327.jpg",
+      "registration_date": "2025-10-17 23:48:22"
+    },
+    {
+      "id": 4,
+      "name": "aptech club",
+      "local_government": "Tarauni",
+      "email": "abdul@gmail.com",
+      "phone": "0998766543",
+      "password": "jogana",
+      "logo": "aptech_club_IMG-20250419-WA0060.jpg",
+      "registration_date": "2025-10-17 23:50:27"
+    },
+    {
+      "id": 5,
+      "name": "NAUB FC",
+      "local_government": "Gezawa",
+      "email": "naub@gmail.com",
+      "phone": "543216790",
+      "password": "kano",
+      "logo": "NAUB_FC_IMG-20250507-WA0034.jpg",
+      "registration_date": "2025-10-19 22:41:38"
+    }
+  ],
+  "players": [
+    {
+      "id": 1,
+      "fullname": "mujahid adamu jogana",
+      "username": "Aimjay0214",
+      "email": "aimjayjogana@gmail.com",
+      "phone": "09128640214",
+      "date_of_birth": "2000-02-07",
+      "jersey_number": 7,
+      "gender": "Male",
+      "profile_picture": "Aimjay0214_IMG_20250427_111150.jpg",
+      "club_id": 1,
+      "goals": 0,
+      "assists": 0,
+      "password": "test12",
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "new_field": null
+    },
+    {
+      "id": 2,
+      "fullname": "kano dai",
+      "username": "abdul22@gmail.com",
+      "email": "oscar@gmail.com",
+      "phone": "1234567890",
+      "date_of_birth": "2009-04-06",
+      "jersey_number": 11,
+      "gender": "Male",
+      "profile_picture": "abdul22gmail.com_IMG-20250403-WA0068.jpg",
+      "club_id": 3,
+      "goals": 0,
+      "assists": 0,
+      "password": "test12",
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "new_field": null
+    },
+    {
+      "id": 3,
+      "fullname": "adamu jogana",
+      "username": "abdul33",
+      "email": "jogana@gmail.com",
+      "phone": "0987654321",
+      "date_of_birth": "2007-08-09",
+      "jersey_number": 17,
+      "gender": "Male",
+      "profile_picture": "abdul33_IMG-20250705-WA0038.jpg",
+      "club_id": 1,
+      "goals": 0,
+      "assists": 0,
+      "password": "test12",
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "new_field": null
+    },
+    {
+      "id": 4,
+      "fullname": "Abdullahi Shehu ",
+      "username": "Lamarina",
+      "email": "lamarina@gmail.com",
+      "phone": "1234567890",
+      "date_of_birth": "2005-12-08",
+      "jersey_number": 7,
+      "gender": "Male",
+      "profile_picture": "Lamarina_IMG-20250705-WA0030.jpg",
+      "club_id": 4,
+      "goals": 0,
+      "assists": 0,
+      "password": "test12",
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "new_field": null
+    },
+    {
+      "id": 5,
+      "fullname": "Al-mustapha Saeed Musa",
+      "username": "G Boy",
+      "email": "musty@gmail.com",
+      "phone": "9876543210",
+      "date_of_birth": "2004-10-18",
+      "jersey_number": 10,
+      "gender": "Male",
+      "profile_picture": "G_Boy_IMG-20250606-WA0092.jpg",
+      "club_id": 3,
+      "goals": 0,
+      "assists": 0,
+      "password": "test12",
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "new_field": null
+    },
+    {
+      "id": 6,
+      "fullname": "Yazid Ahmad Yazid",
+      "username": "Yazid",
+      "email": "yazid@gmail.com",
+      "phone": "65656655565",
+      "date_of_birth": "2008-04-07",
+      "jersey_number": 10,
+      "gender": "Male",
+      "profile_picture": "Yazid_IMG_20250427_111338.jpg",
+      "club_id": 5,
+      "goals": 0,
+      "assists": 0,
+      "password": "kano",
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "new_field": null
+    }
+  ],
+  "competitions": [
+    {
+      "id": 1,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 2,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 3,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 4,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 5,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 6,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 7,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 8,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 9,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 10,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 11,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 12,
+      "name": "Gezawa premier",
+      "description": "Annual football league for clubs gezawa",
+      "start_date": "2025-09-01",
+      "end_date": "2026-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 14,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 15,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 16,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 17,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 18,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 19,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 20,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 21,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 22,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 23,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 24,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 25,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 26,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 27,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 28,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 29,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 30,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 31,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 32,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 33,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 34,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 35,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 36,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 37,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 38,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 39,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    },
+    {
+      "id": 40,
+      "name": "Kano State Football League",
+      "description": "Annual football league for clubs in Kano State",
+      "start_date": "2023-09-01",
+      "end_date": "2023-12-15",
+      "registration_deadline": "2023-08-20",
+      "is_active": 1
+    },
+    {
+      "id": 41,
+      "name": "Kano FA Cup",
+      "description": "Knockout tournament for all registered clubs",
+      "start_date": "2023-10-01",
+      "end_date": "2023-11-30",
+      "registration_deadline": "2023-09-15",
+      "is_active": 1
+    }
+  ],
+  "match_events": [],
+  "matches": [
+    {
+      "id": 1,
+      "competition_id": 8,
+      "home_club_id": 3,
+      "away_club_id": 4,
+      "match_date": "2025-10-04",
+      "location": "JOGANA UNITED",
+      "status": "completed",
+      "home_score": 2,
+      "away_score": 3
+    },
+    {
+      "id": 2,
+      "competition_id": 15,
+      "home_club_id": 5,
+      "away_club_id": 4,
+      "match_date": "2026-03-08",
+      "location": "kano",
+      "status": "completed",
+      "home_score": 1,
+      "away_score": 0
+    }
+  ]
+}

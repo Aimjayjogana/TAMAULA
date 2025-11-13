@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Player Approvals - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <h1>Player Registration Approvals</h1>
+
+    <!-- Pending Approvals Section -->
+    <div class="card">
+        <h2>Pending Approvals</h2>
+        {% if pending_players %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player Info</th>
+                        <th>Contact</th>
+                        <th>Details</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in pending_players %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                                     alt="{{ player.fullname }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                                <div>
+                                    <strong>{{ player.fullname }}</strong><br>
+                                    <small>@{{ player.username }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>Email:</strong> {{ player.email }}<br>
+                            <strong>Phone:</strong> {{ player.phone if player.phone else 'N/A' }}
+                        </td>
+                        <td>
+                            <strong>Jersey:</strong> #{{ player.jersey_number if player.jersey_number else 'N/A' }}<br>
+                            <strong>Gender:</strong> {{ player.gender if player.gender else 'N/A' }}<br>
+                            <strong>DOB:</strong> {{ player.date_of_birth }}
+                        </td>
+                        <td>{{ player.registration_date }}</td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                                <a href="{{ url_for('club_approve_player', player_id=player.id) }}" 
+                                   class="btn" style="background: var(--success); text-align: center;">
+                                    Approve
+                                </a>
+                                <a href="{{ url_for('club_reject_player', player_id=player.id) }}" 
+                                   class="btn" style="background: var(--error); text-align: center;">
+                                    Reject
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: #666;">
+            No players waiting for approval.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Approved Players Section -->
+    <div class="card" style="margin-top: 2rem;">
+        <h2>Approved Players</h2>
+        {% if approved_players %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Jersey #</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in approved_players %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                                     alt="{{ player.fullname }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                {{ player.fullname }}
+                            </div>
+                        </td>
+                        <td>#{{ player.jersey_number if player.jersey_number else 'N/A' }}</td>
+                        <td>{{ player.email }}</td>
+                        <td>
+                            <span style="padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem; 
+                            background: var(--success); color: white;">
+                                Approved
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: #666;">
+            No approved players yet.
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

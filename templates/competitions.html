@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Competitions - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <h1>Current Competitions</h1>
+    
+    <div class="card-grid">
+        {% for competition in competitions %}
+        <div class="card">
+            <h3>{{ competition.name }}</h3>
+            <p>{{ competition.description }}</p>
+            <p><strong>Dates:</strong> {{ competition.start_date }} to {{ competition.end_date }}</p>
+            
+            {% if competition.top_scorers %}
+            <div style="margin-top: 1rem;">
+                <h4>Top Scorers:</h4>
+                <ul>
+                    {% for scorer in competition.top_scorers %}
+                    <li>{{ scorer.fullname }} ({{ scorer.club_name }}) - {{ scorer.goals }} goals</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Move the Groups link outside the top_scorers condition -->
+            <a href="{{ url_for('public_competition_groups', competition_id=competition.id) }}" class="btn" style="margin-top: 1rem;">
+                View Groups & Standings
+            </a>
+            
+            {% if session.user_type == 'club' %}
+            <a href="{{ url_for('competition_registration') }}" class="btn" style="margin-top: 1rem;">Register Now</a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="card">
+            <h3>No Competitions Available</h3>
+            <p>There are currently no active competitions. Please check back later.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Lineup - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Manage Team Lineup</h1>
+        <p>Set your player positions for different competitions</p>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('manage_lineup') }}">
+            <div class="form-group">
+                <label for="competition_id">Select Competition *</label>
+                <select id="competition_id" name="competition_id" class="form-control" required>
+                    <option value="">Choose a competition</option>
+                    {% for competition in competitions %}
+                    <option value="{{ competition.id }}">
+                        {{ competition.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if players %}
+            <div class="card" style="margin: 2rem 0;">
+                <h3>Player Positions ({{ players|length }} players)</h3>
+                <p>Assign positions to your players for the selected competition:</p>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player Name</th>
+                                <th>Jersey #</th>
+                                <th>Position</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in players %}
+                            <tr>
+                                <td>
+                                    {{ player.fullname }}
+                                    <input type="hidden" name="player_ids" value="{{ player.id }}">
+                                </td>
+                                <td>#{{ player.jersey_number if player.jersey_number else 'N/A' }}</td>
+                                <td>
+                                    <select name="player_positions" class="form-control">
+                                        <option value="">Not in lineup</option>
+                                        <option value="Goalkeeper">Goalkeeper</option>
+                                        <option value="Defender">Defender</option>
+                                        <option value="Midfielder">Midfielder</option>
+                                        <option value="Forward">Forward</option>
+                                        <option value="Substitute">Substitute</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn">Save Lineup</button>
+                <a href="{{ url_for('club_dashboard') }}" class="btn" style="background: var(--gray);">Cancel</a>
+            </div>
+            {% else %}
+            <div class="card" style="background: #f8d7da; border-color: #f5c6cb;">
+                <h4>No Players Available</h4>
+                <p>You need to have players registered to your club before you can manage lineups.</p>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Current Lineups Display -->
+    <div class="card" style="margin-top: 2rem;">
+        <h3>Current Lineups</h3>
+        {% for competition in competitions %}
+        <div style="margin-bottom: 1.5rem;">
+            <h4>{{ competition.name }}</h4>
+            {% set lineup_for_comp = current_lineups.get(competition.id, {}) %}
+            {% if lineup_for_comp %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player_id, position in lineup_for_comp.items() %}
+                            {% for player in players %}
+                                {% if player.id == player_id|int %}
+                                <tr>
+                                    <td>{{ player.fullname }} (#{{ player.jersey_number if player.jersey_number else 'N/A' }})</td>
+                                    <td>{{ position }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color: #856404;">No lineup set for this competition yet.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const competitionSelect = document.getElementById('competition_id');
+    const positionSelects = document.querySelectorAll('select[name="player_positions"]');
+    
+    // Load saved positions when competition is selected
+    competitionSelect.addEventListener('change', function() {
+        const competitionId = this.value;
+        
+        // Reset all positions
+        positionSelects.forEach(select => {
+            select.value = '';
+        });
+        
+        if (competitionId) {
+            // Load saved lineup positions
+            fetch(`/get_lineup/${competitionId}`)
+                .then(response => response.json())
+                .then(lineup => {
+                    positionSelects.forEach((select, index) => {
+                        const playerId = select.closest('tr').querySelector('input[name="player_ids"]').value;
+                        if (lineup[playerId]) {
+                            select.value = lineup[playerId];
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading lineup:', error);
+                });
+        }
+    });
+});
+</script>
+{% endblock %}

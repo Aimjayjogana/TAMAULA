@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Competition Details - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>{{ competition.name }}</h1>
+        <p>Competition Details</p>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <h3>Competition Information</h3>
+            <p><strong>Description:</strong> {{ competition.description }}</p>
+            <p><strong>Start Date:</strong> {{ competition.start_date }}</p>
+            <p><strong>End Date:</strong> {{ competition.end_date }}</p>
+            <p><strong>Registration Deadline:</strong> {{ competition.registration_deadline }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Registration Status</h3>
+            {% if registration %}
+                <p><strong>Status:</strong> 
+                    <span style="color: {% if registration.status == 'approved' %}green
+                                      {% elif registration.status == 'pending' %}orange
+                                      {% else %}red{% endif %}; font-weight: bold;">
+                        {{ registration.status|upper }}
+                    </span>
+                </p>
+                <p><strong>Registered on:</strong> {{ registration.registration_date }}</p>
+                {% if registration.approved_date %}
+                    <p><strong>Approved on:</strong> {{ registration.approved_date }}</p>
+                {% endif %}
+            {% else %}
+                <p>Not registered for this competition</p>
+                <a href="{{ url_for('competition_registration') }}" class="btn">Register Now</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if registration and registration.status == 'approved' %}
+    <div class="card" style="margin-top: 2rem;">
+        <h3>Team Lineup for This Competition</h3>
+        <a href="{{ url_for('manage_lineup') }}?competition_id={{ competition.id }}" class="btn" style="margin-bottom: 1rem;">
+            Manage Lineup
+        </a>
+        
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Jersey #</th>
+                        <th>Position</th>
+                        <th>Goals</th>
+                        <th>Assists</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                                     alt="{{ player.fullname }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                {{ player.fullname }}
+                            </div>
+                        </td>
+                        <td>#{{ player.jersey_number if player.jersey_number else 'N/A' }}</td>
+                        <td>{{ player.position if player.position else 'Not set' }}</td>
+                        <td>{{ player.goals }}</td>
+                        <td>{{ player.assists }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('club_dashboard') }}" class="btn" style="background: var(--gray);">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

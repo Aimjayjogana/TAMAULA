@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Home - TAMAULA{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Welcome to TAMAULA</h1>
+        <p>Connect, compete, and showcase your football talent. <br> Join thousands of players and clubs across Kano State.</p>
+        <a href="{{ url_for('register_player') }}" class="cta-button">Join as Player</a>
+        <a href="{{ url_for('register_club') }}" class="cta-button" style="background: var(--accent); margin-left: 1rem;">Register Club</a>
+    </div>
+</section>
+
+<section class="card-grid">
+    <div class="card">
+        <h3>Player Profiles</h3>
+        <p>Create your football profile, track your statistics, and get discovered by clubs.</p>
+        <a href="{{ url_for('players') }}" class="btn">View Players</a>
+    </div>
+    
+    <div class="card">
+        <h3>Club Management</h3>
+        <p>Register your club, manage players, and compete in official tournaments.</p>
+        <a href="{{ url_for('clubs') }}" class="btn">View Clubs</a>
+    </div>
+    
+    <div class="card">
+        <h3>Competitions</h3>
+        <p>Participate in exciting football competitions and showcase your skills.</p>
+        <a href="{{ url_for('competitions') }}" class="btn">View Competitions</a>
+    </div>
+</section>
+{% endblock %}

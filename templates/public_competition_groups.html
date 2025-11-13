@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ competition.name }} - Groups - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>{{ competition.name }} - Group Stage</h1>
+        <p>Follow the group stage matches and standings</p>
+    </div>
+
+    {% for group in groups %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2>{{ group.group_name }}</h2>
+        
+        <!-- Group Standings -->
+        <h3>Standings</h3>
+        {% if group_standings[group.id] %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Club</th>
+                        <th>MP</th>
+                        <th>W</th>
+                        <th>D</th>
+                        <th>L</th>
+                        <th>GF</th>
+                        <th>GA</th>
+                        <th>GD</th>
+                        <th>Pts</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for standing in group_standings[group.id] %}
+                    <tr style="{% if standing.status == 'qualified' %}background: #d1fae5;{% elif standing.status == 'eliminated' %}background: #fee2e2;{% endif %}">
+                        <td><strong>{{ loop.index }}</strong></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if standing.logo %}
+                                <img src="{{ url_for('static', filename='images/uploads/' + standing.logo) }}" 
+                                     alt="{{ standing.club_name }}" style="width: 30px; height: 30px; border-radius: 50%;">
+                                {% endif %}
+                                <strong>{{ standing.club_name }}</strong>
+                            </div>
+                        </td>
+                        <td>{{ standing.matches_played }}</td>
+                        <td>{{ standing.wins }}</td>
+                        <td>{{ standing.draws }}</td>
+                        <td>{{ standing.losses }}</td>
+                        <td>{{ standing.goals_for }}</td>
+                        <td>{{ standing.goals_against }}</td>
+                        <td><strong>{{ standing.goals_for - standing.goals_against }}</strong></td>
+                        <td><strong style="font-size: 1.1em;">{{ standing.points }}</strong></td>
+                        <td>
+                            {% if standing.status == 'qualified' %}
+                            <span style="color: var(--success); font-weight: 600;">✅ Qualified</span>
+                            {% elif standing.status == 'eliminated' %}
+                            <span style="color: var(--error); font-weight: 600;">❌ Eliminated</span>
+                            {% else %}
+                            <span style="color: var(--warning); font-weight: 600;">⚽ Active</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">
+            No clubs in this group yet
+        </p>
+        {% endif %}
+
+        <!-- Recent Matches -->
+        <h3 style="margin-top: 2rem;">Recent Matches</h3>
+        {% if group_matches[group.id] %}
+        <div class="matches-grid">
+            {% for match in group_matches[group.id] %}
+            <div class="match-card" style="background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                    <small style="color: var(--gray);">
+                        {{ match.match_date }} • {{ match.match_time if match.match_time else 'TBD' }}
+                    </small>
+                    <span class="badge" style="
+                        background: {% if match.status == 'completed' %}var(--success)
+                                   {% elif match.status == 'ongoing' %}var(--warning)
+                                   {% else %}var(--gray){% endif %};
+                        color: white; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
+                        {{ match.status|title }}
+                    </span>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center;">
+                    <div style="text-align: right;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
+                            <strong>{{ match.home_club_name }}</strong>
+                            {% if match.home_logo %}
+                            <img src="{{ url_for('static', filename='images/uploads/' + match.home_logo) }}" 
+                                 alt="{{ match.home_club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        {% if match.status == 'completed' %}
+                        <div style="font-size: 1.5rem; font-weight: bold;">
+                            {{ match.home_score }} - {{ match.away_score }}
+                        </div>
+                        {% else %}
+                        <div style="font-size: 1.2rem; font-weight: bold; color: var(--gray);">
+                            VS
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {% if match.away_logo %}
+                            <img src="{{ url_for('static', filename='images/uploads/' + match.away_logo) }}" 
+                                 alt="{{ match.away_club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
+                            {% endif %}
+                            <strong>{{ match.away_club_name }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if match.location %}
+                <div style="text-align: center; margin-top: 0.5rem;">
+                    <small style="color: var(--gray);">📍 {{ match.location }}</small>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 2rem; color: var(--gray);">
+            No matches scheduled for this group yet
+        </p>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div style="text-align: center; padding: 3rem;">
+            <h3>No Groups Created Yet</h3>
+            <p>Group stage information will be available once the competition organizer creates groups</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.matches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.match-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+    .matches-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

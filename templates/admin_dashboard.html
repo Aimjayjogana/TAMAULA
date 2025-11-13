@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, {{ session.admin_username }}! Manage competition registrations and system settings.</p>
+    </div>
+
+<div class="card">
+    <h3>Competition Groups</h3>
+    <p>Manage group stages for competitions</p>
+    {% for comp in active_competitions %}
+    <div style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+        <strong>{{ comp.name }}</strong>
+        <div style="margin-top: 0.5rem;">
+            <a href="{{ url_for('admin_competition_groups', competition_id=comp.id) }}" class="btn" style="margin-right: 0.5rem;">
+                Manage Groups
+            </a>
+            <a href="{{ url_for('admin_group_matches', competition_id=comp.id) }}" class="btn">
+                Group Matches
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+    <!-- Statistics -->
+
+     <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+    <h4>Competition Management</h4>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ url_for('admin_create_competition') }}" class="btn" style="background: var(--success);">
+            Create New Competition
+        </a>
+        <a href="{{ url_for('competitions') }}" class="btn" style="background: var(--primary);">
+            View All Competitions
+        </a>
+    </div>
+</div>
+<div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+    <h4>Club Management</h4>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ url_for('admin_pending_clubs') }}" class="btn" style="background: var(--warning);">
+            Review Club Registrations
+        </a>
+        <a href="{{ url_for('clubs') }}" class="btn" style="background: var(--primary);">
+            View All Clubs
+        </a>
+    </div>
+</div>
+    <div class="stats-grid">
+        <div class="card">
+    <h3>Match Management</h3>
+    <p>Create matches and manage scores</p>
+    <a href="{{ url_for('admin_matches') }}" class="btn">Manage Matches</a>
+    </div>
+
+        <div class="stat-card">
+            <div class="value">{{ stats.total_clubs }}</div>
+            <div class="label">Total Clubs</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ stats.total_players }}</div>
+            <div class="label">Total Players</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ stats.total_competitions }}</div>
+            <div class="label">Competitions</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ stats.pending_registrations }}</div>
+            <div class="label">Pending Approvals</div>
+        </div>
+    </div>
+
+    <!-- Pending Registrations -->
+    <div class="card">
+        <h3>Pending Competition Registrations ({{ pending_registrations|length }})</h3>
+        {% if pending_registrations %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Competition</th>
+                        <th>Local Government</th>
+                        <th>Contact Email</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in pending_registrations %}
+                    <tr>
+                        <td>{{ reg.club_name }}</td>
+                        <td>{{ reg.competition_name }}</td>
+                        <td>{{ reg.local_government }}</td>
+                        <td>{{ reg.club_email }}</td>
+                        <td>{{ reg.registration_date }}</td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn approve-btn" 
+                                        data-registration-id="{{ reg.id }}"
+                                        style="background: var(--success); padding: 0.25rem 0.5rem;">
+                                    Approve
+                                </button>
+                                <button class="btn reject-btn" 
+                                        data-registration-id="{{ reg.id }}"
+                                        style="background: var(--error); padding: 0.25rem 0.5rem;">
+                                    Reject
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No pending registrations.</p>
+        {% endif %}
+    </div>
+
+    <!-- Approved Registrations -->
+    <div class="card" style="margin-top: 2rem;">
+        <h3>Approved Registrations ({{ approved_registrations|length }})</h3>
+        {% if approved_registrations %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Competition</th>
+                        <th>Local Government</th>
+                        <th>Approved By</th>
+                        <th>Approval Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in approved_registrations %}
+                    <tr>
+                        <td>{{ reg.club_name }}</td>
+                        <td>{{ reg.competition_name }}</td>
+                        <td>{{ reg.local_government }}</td>
+                        <td>{{ reg.approved_by_admin or 'System' }}</td>
+                        <td>{{ reg.approved_date }}</td>
+                        <td>
+                            <span style="color: var(--success); font-weight: bold;">APPROVED</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No approved registrations.</p>
+        {% endif %}
+    </div>
+
+    <!-- Rejected Registrations -->
+    <div class="card" style="margin-top: 2rem;">
+        <h3>Rejected Registrations ({{ rejected_registrations|length }})</h3>
+        {% if rejected_registrations %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Competition</th>
+                        <th>Local Government</th>
+                        <th>Registration Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in rejected_registrations %}
+                    <tr>
+                        <td>{{ reg.club_name }}</td>
+                        <td>{{ reg.competition_name }}</td>
+                        <td>{{ reg.local_government }}</td>
+                        <td>{{ reg.registration_date }}</td>
+                        <td>
+                            <span style="color: var(--error); font-weight: bold;">REJECTED</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No rejected registrations.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+    <h4>Data Management</h4>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ url_for('admin_backup') }}" class="btn" style="background: var(--success);">Backup Database</a>
+        <a href="{{ url_for('admin_restore') }}" class="btn" style="background: var(--warning);">Restore Database</a>
+        <a href="{{ url_for('admin_export_data') }}" class="btn" style="background: var(--primary);">Export to JSON</a>
+        <a href="{{ url_for('admin_import_data') }}" class="btn" style="background: var(--secondary);">Import from JSON</a>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div id="approvalModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 2rem; border-radius: 10px; width: 400px;">
+        <h3 id="modalTitle">Approve Registration</h3>
+        <form id="approvalForm">
+            <input type="hidden" id="registrationId" name="registration_id">
+            <input type="hidden" id="actionType" name="action_type">
+            
+            <div class="form-group">
+                <label for="notes">Notes (Optional):</label>
+                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Add any notes..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn" id="modalSubmitBtn">Confirm</button>
+                <button type="button" class="btn" style="background: var(--gray);" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentAction = '';
+let currentRegistrationId = '';
+
+// Approve button handler
+document.querySelectorAll('.approve-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        currentRegistrationId = this.dataset.registrationId;
+        currentAction = 'approve';
+        showModal('Approve Registration', 'Approve this competition registration?', 'Approve');
+    });
+});
+
+// Reject button handler
+document.querySelectorAll('.reject-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        currentRegistrationId = this.dataset.registrationId;
+        currentAction = 'reject';
+        showModal('Reject Registration', 'Reject this competition registration?', 'Reject');
+    });
+});
+
+function showModal(title, message, buttonText) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalSubmitBtn').textContent = buttonText;
+    document.getElementById('registrationId').value = currentRegistrationId;
+    document.getElementById('actionType').value = currentAction;
+    document.getElementById('approvalModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('approvalModal').style.display = 'none';
+    document.getElementById('notes').value = '';
+}
+
+// Form submission - FIXED URL VERSION
+document.getElementById('approvalForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const registrationId = formData.get('registration_id');
+    const action = formData.get('action_type');
+    const notes = formData.get('notes');
+    
+    // FIXED: Use absolute URLs to avoid path issues
+    const url = action === 'approve' 
+        ? '{{ url_for('approve_registration', registration_id=0) }}' .replace('0', registrationId)
+        : '{{ url_for('reject_registration', registration_id=0) }}' .replace('0', registrationId);
+    
+    console.log('Making request to:', url);
+    
+    // Show loading state
+    const submitBtn = document.getElementById('modalSubmitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Processing...';
+    submitBtn.disabled = true;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'notes=${encodeURIComponent(notes)}'
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        // First, check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If not JSON, return the text and handle as error
+            return response.text().then(html => {
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            alert('✅ ' + data.message);
+            // Refresh the page to see changes
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('❌ ' + data.message);
+            // Reset button
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('❌ Error: ' + error.message + '. Please check the console for details.');
+        // Reset button
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Close modal when clicking outside
+document.getElementById('approvalModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+
+{% endblock %}

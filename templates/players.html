@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Players - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Players Room</h1>
+        <p>Find and explore all registered players</p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container" style="margin-bottom: 2rem;">
+        <div class="form-group">
+            <input type="text" id="playerSearch" class="form-control" 
+                   placeholder="Search players by name, club, position, or jersey number...">
+        </div>
+    </div>
+
+    <!-- Players Grid -->
+    <div class="profile-grid" id="playersGrid">
+        {% for player, age in players %}
+        <div class="profile-card player-card" 
+             data-name="{{ player.fullname.lower() }}" 
+             data-club="{{ player.club_name.lower() }}"
+             data-position="{{ player.position.lower() if player.position else '' }}"
+             data-jersey="{{ player.jersey_number or '' }}">
+            <div class="profile-image-container">
+                <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                     alt="{{ player.fullname }}" class="profile-image">
+                <div class="jersey-badge">#{{ player.jersey_number if player.jersey_number else 'N/A' }}</div>
+            </div>
+            <div class="profile-info">
+                <h3 class="profile-name">{{ player.fullname }}</h3>
+                <p class="profile-club">{{ player.club_name }}</p>
+                <div class="profile-stats">
+                    <div class="stat">
+                        <div class="stat-value">{{ player.goals }}</div>
+                        <div class="stat-label">Goals</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{ player.assists }}</div>
+                        <div class="stat-label">Assists</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{ age }}</div>
+                        <div class="stat-label">Age</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" style="display: none; text-align: center; padding: 2rem;">
+        <h3>No players found</h3>
+        <p>Try adjusting your search terms</p>
+    </div>
+</div>
+
+<style>
+.search-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.player-card {
+    position: relative;
+}
+
+.profile-image-container {
+    position: relative;
+}
+
+.jersey-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.profile-club {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-position {
+    color: var(--primary);
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.highlight {
+    background-color: yellow;
+    font-weight: bold;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('playerSearch');
+    const playersGrid = document.getElementById('playersGrid');
+    const playerCards = document.querySelectorAll('.player-card');
+    const noResults = document.getElementById('noResults');
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        playerCards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            const club = card.getAttribute('data-club');
+            const position = card.getAttribute('data-position');
+            const jersey = card.getAttribute('data-jersey');
+            
+            const matches = name.includes(searchTerm) || 
+                           club.includes(searchTerm) || 
+                           position.includes(searchTerm) || 
+                           jersey.includes(searchTerm);
+
+            if (matches || searchTerm === '') {
+                card.style.display = 'block';
+                visibleCount++;
+                
+                // Highlight matching text
+                if (searchTerm) {
+                    highlightText(card, searchTerm);
+                } else {
+                    removeHighlights(card);
+                }
+            } else {
+                card.style.display = 'none';
+                removeHighlights(card);
+            }
+        });
+
+        // Show/hide no results message
+        if (visibleCount === 0 && searchTerm !== '') {
+            noResults.style.display = 'block';
+            playersGrid.style.display = 'none';
+        } else {
+            noResults.style.display = 'none';
+            playersGrid.style.display = 'grid';
+        }
+    });
+
+    function highlightText(element, searchTerm) {
+        const textElements = element.querySelectorAll('.profile-name, .profile-club, .profile-position');
+        
+        textElements.forEach(textElement => {
+            const originalText = textElement.textContent;
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
+            textElement.innerHTML = highlightedText;
+        });
+    }
+
+    function removeHighlights(element) {
+        const highlightedElements = element.querySelectorAll('.highlight');
+        highlightedElements.forEach(highlight => {
+            const parent = highlight.parentNode;
+            parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+            parent.normalize();
+        });
+    }
+});
+</script>
+{% endblock %}

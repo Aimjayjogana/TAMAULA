@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Club Matches - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>Your Club's Matches</h1>
+        <p>View all matches involving your club</p>
+    </div>
+
+    <div class="card">
+        <h3>Match Schedule & Results</h3>
+        
+        {% if matches %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Match</th>
+                        <th>Competition</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in matches %}
+                    <tr>
+                        <td>
+                            <strong>{{ match.home_club_name }}</strong> vs <br>
+                            <strong>{{ match.away_club_name }}</strong>
+                            {% if match.home_club_id == session.user_id %}
+                                <br><small>(Home)</small>
+                            {% elif match.away_club_id == session.user_id %}
+                                <br><small>(Away)</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ match.competition_name }}</td>
+                        <td>
+                            {{ match.match_date }}
+                            <small style="color: var(--gray);">{{ match.match_time if match.match_time else 'Time TBA'}}</small>
+                        </td>
+                        
+                        <td>
+                            <span style="color: {% if match.status == 'completed' %}green
+                                              {% elif match.status == 'ongoing' %}orange
+                                              {% else %}blue{% endif %};">
+                                {{ match.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if match.status == 'completed' %}
+                                {{ match.home_score }} - {{ match.away_score }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('match_details', match_id=match.id) }}" 
+                               class="btn" 
+                               style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                View Details
+                            </a>
+                            <a href="{{ url_for('public_match_details', match_id=match.id) }}" class="btn" style="padding: 0.25rem; font-size: 0.8rem; background: var(--success); margin-top: 0.35rem;"></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 2rem;">
+            <h4>No Matches Scheduled</h4>
+            <p>Your club doesn't have any matches scheduled yet.</p>
+            <p>Matches will appear here once they are created by the admin.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('club_dashboard') }}" class="btn" style="background: var(--gray);">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

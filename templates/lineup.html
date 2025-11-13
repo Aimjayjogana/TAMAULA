@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Lineups - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <h1>Match Lineups</h1>
+    
+    <div class="form-group">
+        <label for="competition_select">Select Competition:</label>
+        <select id="competition_select" class="form-control" onchange="window.location.href = '?competition_id=' + this.value">
+            <option value="">Select Competition</option>
+            {% for competition in competitions %}
+            <option value="{{ competition.id }}" {% if competition.id == current_competition_id %}selected{% endif %}>
+                {{ competition.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if current_competition_id %}
+        {% if clubs %}
+        <div class="lineups-container">
+            {% for club in clubs %}
+            <div class="card lineup-card">
+                <div class="card-header">
+                    <h3>{{ club.name }}</h3>
+                    {% if club.logo %}
+                    <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" alt="{{ club.name }} logo" class="club-logo">
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% set club_players = lineups[club.id] %}
+                    {% if club_players %}
+                    <div class="formation-section">
+                        <!-- Goalkeeper -->
+                        {% set goalkeepers = club_players|selectattr('position', 'equalto', 'Goalkeeper')|list %}
+                        {% if goalkeepers %}
+                        <div class="position-group">
+                            <h4>Goalkeeper</h4>
+                            {% for player in goalkeepers %}
+                            <div class="player-card">
+                                <div class="jersey-number">#{{ player.jersey_number or '?' }}</div>
+                                <div class="player-name">{{ player.fullname }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Defenders -->
+                        {% set defenders = club_players|selectattr('position', 'equalto', 'Defender')|list %}
+                        {% if defenders %}
+                        <div class="position-group">
+                            <h4>Defenders</h4>
+                            {% for player in defenders %}
+                            <div class="player-card">
+                                <div class="jersey-number">#{{ player.jersey_number or '?' }}</div>
+                                <div class="player-name">{{ player.fullname }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Midfielders -->
+                        {% set midfielders = club_players|selectattr('position', 'equalto', 'Midfielder')|list %}
+                        {% if midfielders %}
+                        <div class="position-group">
+                            <h4>Midfielders</h4>
+                            {% for player in midfielders %}
+                            <div class="player-card">
+                                <div class="jersey-number">#{{ player.jersey_number or '?' }}</div>
+                                <div class="player-name">{{ player.fullname }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Forwards -->
+                        {% set forwards = club_players|selectattr('position', 'equalto', 'Forward')|list %}
+                        {% if forwards %}
+                        <div class="position-group">
+                            <h4>Forwards</h4>
+                            {% for player in forwards %}
+                            <div class="player-card">
+                                <div class="jersey-number">#{{ player.jersey_number or '?' }}</div>
+                                <div class="player-name">{{ player.fullname }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Substitutes -->
+                        {% set substitutes = club_players|selectattr('position', 'equalto', 'Substitute')|list %}
+                        {% if substitutes %}
+                        <div class="position-group substitutes">
+                            <h4>Substitutes</h4>
+                            {% for player in substitutes %}
+                            <div class="player-card substitute">
+                                <div class="jersey-number">#{{ player.jersey_number or '?' }}</div>
+                                <div class="player-name">{{ player.fullname }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="no-lineup">
+                        <p>No lineup set for this competition</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body">
+                <p>No clubs are registered for this competition yet.</p>
+            </div>
+        </div>
+        {% endif %}
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <p>Please select a competition to view lineups.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.lineups-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.lineup-card {
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--primary);
+    color: white;
+    padding: 1rem;
+}
+
+.club-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.formation-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.position-group {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.position-group h4 {
+    margin: 0 0 1rem 0;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+.player-card {
+    display: inline-flex;
+    align-items: center;
+    background: white;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    min-width: 120px;
+}
+
+.player-card .jersey-number {
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.player-card .player-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.substitutes {
+    background: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+}
+
+.substitute {
+    background: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+}
+
+.no-lineup {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
