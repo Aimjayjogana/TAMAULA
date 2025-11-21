@@ -68,8 +68,9 @@ LOCAL_GOVERNMENTS = {
 }
 
 @app.route('/init-db')
-def init_database():
+def initialize():
     init_db()
+    return "<h1>Tamaula is ready! All tables created.</h1>"
     
 @app.route('/')
 def index():
