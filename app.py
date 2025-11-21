@@ -2232,14 +2232,14 @@ def competitions():
         competition_data = []
         
         for comp in competitions:
-            # Get top scorers for this competition
+            # Get top scorers for this competition - FIXED for PostgreSQL
             top_scorers = fetch_all(conn, '''
                 SELECT p.fullname, p.profile_picture, c.name as club_name, COUNT(me.id) as goals
                 FROM match_events me
                 JOIN players p ON me.player_id = p.id
                 JOIN clubs c ON p.club_id = c.id
                 WHERE me.competition_id = ? AND me.event_type = 'goal'
-                GROUP BY p.id
+                GROUP BY p.id, p.fullname, p.profile_picture, c.name
                 ORDER BY goals DESC
                 LIMIT 5
             ''', (comp['id'],))
