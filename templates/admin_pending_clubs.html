@@ -41,7 +41,7 @@
                         <td>{{ club.local_government }}</td>
                         <td>{{ club.email }}</td>
                         <td>{{ club.phone or 'N/A' }}</td>
-                        <td>{{ club.registration_date[:10] }}</td>
+                        <td>{{ club.registration_date.strftime('%Y-%m-%d') if club.registration_date else 'N/A' }}</td>
                         <td>
                             <button class="btn approve-club" data-club-id="{{ club.id }}" 
                                     style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
@@ -94,7 +94,7 @@
                         <td>{{ club.local_government }}</td>
                         <td>{{ club.email }}</td>
                         <td>{{ club.phone or 'N/A' }}</td>
-                        <td>{{ club.registration_date[:10] }}</td>
+                        <td>{{ club.registration_date.strftime('%Y-%m-%d') if club.registration_date else 'N/A' }}</td>
                         <td>
                             <span style="color: var(--success); font-weight: 500;">Approved</span>
                         </td>
