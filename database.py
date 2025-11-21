@@ -175,8 +175,6 @@ def init_db():
         cur.close()
         conn.close()
 
-# ====================== RUN ONCE ROUTE (add to your app.py) ======================
-# from database import init_db
 
 
 if __name__ == "__main__":
