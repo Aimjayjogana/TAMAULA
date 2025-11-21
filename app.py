@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from database import get_db_connection, init_db, backup_database, export_data, import_data, restore_latest_backup, migrate_database
+from database import get_db_connection, init_db
 from database import execute_sql, fetch_one, fetch_all
 from datetime import datetime, date
 import atexit
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = '5224078f7aa87433a624ffb37bf352fa09f4894ea6348a6b62f9db9c0215a30c'
+app.secret_key = os.environ.get('SECRET_KEY', '5224078f7aa87433a624ffb37bf352fa09f4894ea6348a6b62f9db9c0215a30c')
 app.config['UPLOAD_FOLDER'] = 'static/images/uploads'
 
 storage.init_app(app)
@@ -67,10 +67,22 @@ LOCAL_GOVERNMENTS = {
     "Wudil": ["Wudil FC", "Wudil United", "Garko FC"]
 }
 
+# Helper function to get parameter placeholder based on database type
+def get_param_placeholder():
+    from database import get_db_config
+    return '%s' if get_db_config() == 'postgresql' else '?'
+
+def check_admin_session():
+    """Check if user is logged in as admin"""
+    return 'admin_id' in session and session.get('user_type') == 'admin'
+
 @app.route('/init-db')
 def initialize():
-    init_db()
-    return "<h1>Tamaula is ready! All tables created.</h1>"
+    try:
+        init_db()
+        return "<h1>Tamaula is ready! All tables created.</h1>"
+    except Exception as e:
+        return f"<h1>Database initialization failed: {str(e)}</h1>", 500
     
 @app.route('/')
 def index():
@@ -79,66 +91,72 @@ def index():
 @app.route('/register_player', methods=['GET', 'POST'])
 def register_player():
     if request.method == 'POST':
-        fullname = request.form['fullname']
-        username = request.form['username']
-        email = request.form['email']
-        phone = request.form['phone']
-        date_of_birth = request.form['date_of_birth']
-        jersey_number = request.form['jersey_number']
-        gender = request.form['gender']
-        local_government = request.form['local_government']
-        club_name = request.form['club']
-        password = request.form['password']
+        try:
+            fullname = request.form['fullname']
+            username = request.form['username']
+            email = request.form['email']
+            phone = request.form['phone']
+            date_of_birth = request.form['date_of_birth']
+            jersey_number = request.form['jersey_number']
+            gender = request.form['gender']
+            local_government = request.form['local_government']
+            club_name = request.form['club']
+            password = request.form['password']
+            
+            conn = get_db_connection()
+            try:
+                # Check if club exists
+                club = fetch_one(conn, 'SELECT id FROM clubs WHERE name = ? AND local_government = ?', 
+                                (club_name, local_government))
+                
+                if not club:
+                    flash('Selected club is not registered. Please ask your club to register first.', 'error')
+                    return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+                
+                # Check if username or email already exists
+                existing_user = fetch_one(conn,
+                    'SELECT id FROM players WHERE username = ? OR email = ?', 
+                    (username, email)
+                )
+                
+                if existing_user:
+                    flash('Username or email already exists.', 'error')
+                    return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+                
+                # Handle profile picture upload
+                profile_picture = None
+                if 'profile_picture' in request.files:
+                    file = request.files['profile_picture']
+                    if file and file.filename != '':
+                        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                        if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                            filename = secure_filename(f"{username}_{file.filename}")
+                            # UPLOAD TO CLOUD STORAGE
+                            file_url = storage.upload_file(file, filename, 'player-profiles')
+                            if file_url:
+                                profile_picture = file_url
+                            else:
+                                flash('Error uploading profile picture', 'error')
+                        else:
+                            flash('Invalid file type.', 'error')
+                
+                # Insert player into database with 'pending' status (club approval needed)
+                execute_sql(conn, '''
+                    INSERT INTO players (fullname, username, email, phone, date_of_birth, 
+                    jersey_number, gender, profile_picture, club_id, password, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (fullname, username, email, phone, date_of_birth, jersey_number, 
+                      gender, profile_picture, club['id'], password, 'pending'))
+                
+                conn.commit()
+                flash('Registration submitted successfully! Please wait for club approval.', 'success')
+                return redirect(url_for('login'))
+            finally:
+                conn.close()
         
-        # Check if club exists
-        conn = get_db_connection()
-        club = fetch_one(conn, 'SELECT id FROM clubs WHERE name = ? AND local_government = ?', 
-                        (club_name, local_government))
-        
-        if not club:
-            flash('Selected club is not registered. Please ask your club to register first.', 'error')
+        except Exception as e:
+            flash(f'Registration failed: {str(e)}', 'error')
             return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
-        
-        # Check if username or email already exists
-        existing_user = fetch_one(conn,
-            'SELECT id FROM players WHERE username = ? OR email = ?', 
-            (username, email)
-        )
-        
-        if existing_user:
-            flash('Username or email already exists.', 'error')
-            return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
-        
-        # Handle profile picture upload
-        profile_picture = None
-        if 'profile_picture' in request.files:
-            file = request.files['profile_picture']
-            if file and file.filename != '':
-                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-                if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
-                    filename = secure_filename(f"{username}_{file.filename}")
-                    # UPLOAD TO CLOUD STORAGE
-                    file_url = storage.upload_file(file, filename, 'player-profiles')
-                    if file_url:
-                        profile_picture = file_url
-                    else:
-                        flash('Error uploading profile picture', 'error')
-                else:
-                    flash('Invalid file type.', 'error')
-        
-        # Insert player into database with 'pending' status (club approval needed)
-        execute_sql(conn, '''
-            INSERT INTO players (fullname, username, email, phone, date_of_birth, 
-            jersey_number, gender, profile_picture, club_id, password, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (fullname, username, email, phone, date_of_birth, jersey_number, 
-              gender, profile_picture, club['id'], password, 'pending'))
-        
-        conn.commit()
-        conn.close()
-        
-        flash('Registration submitted successfully! Please wait for club approval.', 'success')
-        return redirect(url_for('login'))
     
     return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
 
@@ -188,6 +206,9 @@ def edit_club_details():
             return redirect(url_for('club_dashboard'))
         
         return render_template('edit_club_details.html', club=club, local_governments=LOCAL_GOVERNMENTS)
+    except Exception as e:
+        flash(f'Error updating club details: {str(e)}', 'error')
+        return redirect(url_for('club_dashboard'))
     finally:
         conn.close()
 
@@ -259,6 +280,9 @@ def club_transfer_requests():
         return render_template('club_transfer_requests.html',
                              outgoing=outgoing,
                              incoming=incoming)
+    except Exception as e:
+        flash(f'Error loading transfer requests: {str(e)}', 'error')
+        return redirect(url_for('club_dashboard'))
     finally:
         conn.close()
 
@@ -280,7 +304,7 @@ def club_approve_transfer(transfer_id):
             if transfer['status'] == 'pending':
                 execute_sql(conn, '''
                     UPDATE transfer_requests 
-                    SET status = "approved_by_from", approved_by_from_date = CURRENT_TIMESTAMP 
+                    SET status = 'approved_by_from', approved_by_from_date = CURRENT_TIMESTAMP 
                     WHERE id = ?
                 ''', (transfer_id,))
                 flash('Transfer approved. Waiting for destination club approval.', 'success')
@@ -294,7 +318,7 @@ def club_approve_transfer(transfer_id):
                            (transfer['to_club_id'], transfer['player_id']))
                 execute_sql(conn, '''
                     UPDATE transfer_requests 
-                    SET status = "completed", 
+                    SET status = 'completed', 
                         approved_by_to_date = CURRENT_TIMESTAMP,
                         completed_date = CURRENT_TIMESTAMP 
                     WHERE id = ?
@@ -334,6 +358,9 @@ def club_reject_transfer(transfer_id):
         else:
             flash('Not authorized', 'error')
         
+        return redirect(url_for('club_transfer_requests'))
+    except Exception as e:
+        flash(f'Error rejecting transfer: {str(e)}', 'error')
         return redirect(url_for('club_transfer_requests'))
     finally:
         conn.close()
@@ -456,7 +483,7 @@ def edit_player_profile():
         clubs = fetch_all(conn, '''
             SELECT id, name, local_government 
             FROM clubs 
-            WHERE approved = 1 
+            WHERE approved = TRUE 
             ORDER BY name
         ''')
         
@@ -539,6 +566,9 @@ def competition_details(competition_id):
                              competition=competition, 
                              registration=registration,
                              players=players)
+    except Exception as e:
+        flash(f'Error loading competition details: {str(e)}', 'error')
+        return redirect(url_for('club_dashboard'))
     finally:
         conn.close()
 
@@ -591,6 +621,9 @@ def match_details(match_id):
                              match=match, 
                              events=events, 
                              players=players)
+    except Exception as e:
+        flash(f'Error loading match details: {str(e)}', 'error')
+        return redirect(url_for('club_matches'))
     finally:
         conn.close()
 
@@ -642,6 +675,9 @@ def admin_match_events(match_id):
                              events=events,
                              home_players=home_players,
                              away_players=away_players)
+    except Exception as e:
+        flash(f'Error loading match events: {str(e)}', 'error')
+        return redirect(url_for('admin_matches'))
     finally:
         conn.close()
 
@@ -686,7 +722,7 @@ def admin_add_match_event(match_id):
         
     except Exception as e:
         conn.rollback()
-        flash('Error adding event', 'error')
+        flash(f'Error adding event: {str(e)}', 'error')
     finally:
         conn.close()
     
@@ -704,13 +740,13 @@ def admin_delete_match_event(event_id):
         
         if event:
             if event['event_type'] == 'goal':
-                execute_sql(conn, 'UPDATE players SET goals = GREATEST(goals - 1, 0) WHERE id = ?', (event['player_id'],))
+                execute_sql(conn, 'UPDATE players SET goals = GREATEST(COALESCE(goals, 0) - 1, 0) WHERE id = ?', (event['player_id'],))
             elif event['event_type'] == 'assist':
-                execute_sql(conn, 'UPDATE players SET assists = GREATEST(assists - 1, 0) WHERE id = ?', (event['player_id'],))
+                execute_sql(conn, 'UPDATE players SET assists = GREATEST(COALESCE(assists, 0) - 1, 0) WHERE id = ?', (event['player_id'],))
             elif event['event_type'] == 'yellow_card':
-                execute_sql(conn, 'UPDATE players SET yellow_cards = GREATEST(yellow_cards - 1, 0) WHERE id = ?', (event['player_id'],))
+                execute_sql(conn, 'UPDATE players SET yellow_cards = GREATEST(COALESCE(yellow_cards, 0) - 1, 0) WHERE id = ?', (event['player_id'],))
             elif event['event_type'] == 'red_card':
-                execute_sql(conn, 'UPDATE players SET red_cards = GREATEST(red_cards - 1, 0) WHERE id = ?', (event['player_id'],))
+                execute_sql(conn, 'UPDATE players SET red_cards = GREATEST(COALESCE(red_cards, 0) - 1, 0) WHERE id = ?', (event['player_id'],))
             
             execute_sql(conn, 'DELETE FROM match_events WHERE id = ?', (event_id,))
             conn.commit()
@@ -723,53 +759,10 @@ def admin_delete_match_event(event_id):
             
     except Exception as e:
         conn.rollback()
-        flash('Error deleting event', 'error')
+        flash(f'Error deleting event: {str(e)}', 'error')
         return redirect(url_for('admin_matches'))
     finally:
         conn.close()
-
-@app.route('/admin/backup')
-def admin_backup():
-    if 'admin_id' not in session:
-        return redirect(url_for('admin_login'))
-    
-    backup_file = backup_database()
-    if backup_file:
-        flash(f'Database backed up successfully: {backup_file}', 'success')
-    else:
-        flash('Backup failed', 'error')
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/restore')
-def admin_restore():
-    if 'admin_id' not in session:
-        return redirect(url_for('admin_login'))
-    
-    if restore_latest_backup():
-        flash('Database restored from latest backup', 'success')
-    else:
-        flash('No backup found to restore', 'error')
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/export_data')
-def admin_export_data():
-    if 'admin_id' not in session:
-        return redirect(url_for('admin_login'))
-    
-    export_data()
-    flash('Data exported to JSON successfully', 'success')
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/import_data')
-def admin_import_data():
-    if 'admin_id' not in session:
-        return redirect(url_for('admin_login'))
-    
-    if import_data():
-        flash('Data imported from JSON successfully', 'success')
-    else:
-        flash('No data export file found', 'error')
-    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -792,6 +785,8 @@ def admin_login():
                 return redirect(url_for('admin_dashboard'))
             else:
                 flash('Invalid admin credentials.', 'error')
+        except Exception as e:
+            flash(f'Login error: {str(e)}', 'error')
         finally:
             conn.close()
     
@@ -864,6 +859,9 @@ def admin_dashboard():
                              rejected_registrations=rejected_registrations,
                              stats=stats,
                              active_competitions=active_competitions)
+    except Exception as e:
+        flash(f'Error loading admin dashboard: {str(e)}', 'error')
+        return redirect(url_for('admin_login'))
     finally:
         conn.close()
 
@@ -897,6 +895,9 @@ def admin_matches():
                              matches=matches, 
                              clubs=clubs, 
                              competitions=competitions)
+    except Exception as e:
+        flash(f'Error loading matches: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
 
@@ -924,6 +925,9 @@ def club_matches():
         ''', (club_id, club_id))
         
         return render_template('club_matches.html', matches=matches)
+    except Exception as e:
+        flash(f'Error loading matches: {str(e)}', 'error')
+        return redirect(url_for('club_dashboard'))
     finally:
         conn.close()
 
@@ -947,9 +951,9 @@ def create_match():
         
         # Create match
         execute_sql(conn, '''
-            INSERT INTO matches (competition_id, home_club_id, away_club_id, match_date, location, status)
-            VALUES (?, ?, ?, ?, ?, 'scheduled')
-        ''', (competition_id, home_club_id, away_club_id, match_date, location))
+            INSERT INTO matches (competition_id, home_club_id, away_club_id, match_date, match_time, location, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
+        ''', (competition_id, home_club_id, away_club_id, match_date, match_time, location))
         
         conn.commit()
         return jsonify({'success': True, 'message': 'Match created successfully'})
@@ -1163,10 +1167,6 @@ def reject_registration(registration_id):
     finally:
         conn.close()
 
-def check_admin_session():
-    """Check if user is logged in as admin"""
-    return 'admin_id' in session and session.get('user_type') == 'admin'
-
 @app.route('/admin/check_session')
 def check_admin_session_route():
     """Route to check if admin session is valid"""
@@ -1195,6 +1195,9 @@ def admin_pending_clubs():
         return render_template('admin_pending_clubs.html', 
                              pending_clubs=pending_clubs,
                              approved_clubs=approved_clubs)
+    except Exception as e:
+        flash(f'Error loading pending clubs: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
 
@@ -1285,6 +1288,9 @@ def admin_competition_groups(competition_id):
                              groups=groups,
                              registered_clubs=registered_clubs,
                              group_assignments=group_assignments)
+    except Exception as e:
+        flash(f'Error loading competition groups: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
 
@@ -1345,10 +1351,10 @@ def admin_assign_club_to_group():
         
         # Initialize standings
         execute_sql(conn, '''
-            INSERT OR REPLACE INTO group_standings 
+            INSERT INTO group_standings 
             (competition_id, group_id, club_id, status)
             VALUES (?, ?, ?, 'active')
-        ''', (competition_id, group_id, club_id, 'active'))
+        ''', (competition_id, group_id, club_id))
         
         conn.commit()
         return jsonify({'success': True, 'message': 'Club assigned to group successfully'})
@@ -1427,6 +1433,9 @@ def admin_group_matches(competition_id):
                              groups=groups,
                              group_matches=group_matches,
                              group_standings=group_standings)
+    except Exception as e:
+        flash(f'Error loading group matches: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
 
@@ -1535,17 +1544,17 @@ def update_group_standings(conn, group_id, home_club_id, away_club_id, home_scor
     # Update matches played
     execute_sql(conn, '''
         UPDATE group_standings 
-        SET matches_played = matches_played + 1,
-            goals_for = goals_for + ?,
-            goals_against = goals_against + ?
+        SET matches_played = COALESCE(matches_played, 0) + 1,
+            goals_for = COALESCE(goals_for, 0) + ?,
+            goals_against = COALESCE(goals_against, 0) + ?
         WHERE group_id = ? AND club_id = ?
     ''', (home_score, away_score, group_id, home_club_id))
     
     execute_sql(conn, '''
         UPDATE group_standings 
-        SET matches_played = matches_played + 1,
-            goals_for = goals_for + ?,
-            goals_against = goals_against + ?
+        SET matches_played = COALESCE(matches_played, 0) + 1,
+            goals_for = COALESCE(goals_for, 0) + ?,
+            goals_against = COALESCE(goals_against, 0) + ?
         WHERE group_id = ? AND club_id = ?
     ''', (away_score, home_score, group_id, away_club_id))
     
@@ -1554,13 +1563,13 @@ def update_group_standings(conn, group_id, home_club_id, away_club_id, home_scor
         # Home win
         execute_sql(conn, '''
             UPDATE group_standings 
-            SET wins = wins + 1, points = points + 3
+            SET wins = COALESCE(wins, 0) + 1, points = COALESCE(points, 0) + 3
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, home_club_id))
         
         execute_sql(conn, '''
             UPDATE group_standings 
-            SET losses = losses + 1
+            SET losses = COALESCE(losses, 0) + 1
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, away_club_id))
         
@@ -1568,13 +1577,13 @@ def update_group_standings(conn, group_id, home_club_id, away_club_id, home_scor
         # Away win
         execute_sql(conn, '''
             UPDATE group_standings 
-            SET wins = wins + 1, points = points + 3
+            SET wins = COALESCE(wins, 0) + 1, points = COALESCE(points, 0) + 3
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, away_club_id))
         
         execute_sql(conn, '''
             UPDATE group_standings 
-            SET losses = losses + 1
+            SET losses = COALESCE(losses, 0) + 1
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, home_club_id))
         
@@ -1582,13 +1591,13 @@ def update_group_standings(conn, group_id, home_club_id, away_club_id, home_scor
         # Draw
         execute_sql(conn, '''
             UPDATE group_standings 
-            SET draws = draws + 1, points = points + 1
+            SET draws = COALESCE(draws, 0) + 1, points = COALESCE(points, 0) + 1
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, home_club_id))
         
         execute_sql(conn, '''
             UPDATE group_standings 
-            SET draws = draws + 1, points = points + 1
+            SET draws = COALESCE(draws, 0) + 1, points = COALESCE(points, 0) + 1
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, away_club_id))
 
@@ -1646,6 +1655,9 @@ def public_competition_groups(competition_id):
                              groups=groups,
                              group_standings=group_standings,
                              group_matches=group_matches)
+    except Exception as e:
+        flash(f'Error loading competition groups: {str(e)}', 'error')
+        return redirect(url_for('competitions'))
     finally:
         conn.close()
 
@@ -1680,44 +1692,44 @@ def login():
         user_type = request.form['user_type']
         
         conn = get_db_connection()
-        
-        if user_type == 'player':
-            user = fetch_one(conn,
-                'SELECT * FROM players WHERE username = ? AND password = ?', 
-                (username, password)
-            )
-            
-            # Check if player is approved
-            if user and user['status'] != 'approved':
-                flash('Your account is pending approval from your club. Please wait for approval before logging in.', 'warning')
-                conn.close()
-                return render_template('login.html')
-                
-        else:  # club
-            user = fetch_one(conn,
-                'SELECT * FROM clubs WHERE name = ? AND password = ?', 
-                (username, password)
-            )
-            
-            # Check if club is approved
-            if user and not user['approved']:
-                flash('Your club registration is pending approval. Please wait for admin approval before logging in.', 'warning')
-                conn.close()
-                return render_template('login.html')
-        
-        conn.close()
-        
-        if user:
-            session['user_id'] = user['id']
-            session['user_type'] = user_type
-            session['username'] = user['username'] if user_type == 'player' else user['name']
-            
+        try:
             if user_type == 'player':
-                return redirect(url_for('dashboard'))
+                user = fetch_one(conn,
+                    'SELECT * FROM players WHERE username = ? AND password = ?', 
+                    (username, password)
+                )
+                
+                # Check if player is approved
+                if user and user.get('status') != 'approved':
+                    flash('Your account is pending approval from your club. Please wait for approval before logging in.', 'warning')
+                    return render_template('login.html')
+                    
+            else:  # club
+                user = fetch_one(conn,
+                    'SELECT * FROM clubs WHERE name = ? AND password = ?', 
+                    (username, password)
+                )
+                
+                # Check if club is approved
+                if user and not user.get('approved'):
+                    flash('Your club registration is pending approval. Please wait for admin approval before logging in.', 'warning')
+                    return render_template('login.html')
+            
+            if user:
+                session['user_id'] = user['id']
+                session['user_type'] = user_type
+                session['username'] = user['username'] if user_type == 'player' else user['name']
+                
+                if user_type == 'player':
+                    return redirect(url_for('dashboard'))
+                else:
+                    return redirect(url_for('club_dashboard'))
             else:
-                return redirect(url_for('club_dashboard'))
-        else:
-            flash('Invalid credentials. Please try again.', 'error')
+                flash('Invalid credentials. Please try again.', 'error')
+        except Exception as e:
+            flash(f'Login error: {str(e)}', 'error')
+        finally:
+            conn.close()
     
     return render_template('login.html')
 
@@ -1784,37 +1796,42 @@ def dashboard():
         return redirect(url_for('login'))
     
     conn = get_db_connection()
-    player = fetch_one(conn, '''
-        SELECT p.*, c.name as club_name 
-        FROM players p 
-        JOIN clubs c ON p.club_id = c.id 
-        WHERE p.id = ?
-    ''', (session['user_id'],))
-    
-    # Check if player exists
-    if not player:
-        session.clear()
-        flash('Player not found. Please login again.', 'error')
-        return redirect(url_for('login'))
-    
-    # Get pending transfers
-    pending_transfers = fetch_all(conn, '''
-        SELECT tr.*, to_club.name as to_club_name
-        FROM transfer_requests tr
-        JOIN clubs to_club ON tr.to_club_id = to_club.id
-        WHERE tr.player_id = ? AND tr.status IN ('pending', 'approved_by_from')
-    ''', (session['user_id'],))
-    
-    # Calculate age from date of birth
     try:
-        birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
-        today = date.today()
-        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-    except (ValueError, KeyError):
-        age = 'N/A'
-    
-    conn.close()
-    return render_template('dashboard.html', player=player, age=age)
+        player = fetch_one(conn, '''
+            SELECT p.*, c.name as club_name 
+            FROM players p 
+            JOIN clubs c ON p.club_id = c.id 
+            WHERE p.id = ?
+        ''', (session['user_id'],))
+        
+        # Check if player exists
+        if not player:
+            session.clear()
+            flash('Player not found. Please login again.', 'error')
+            return redirect(url_for('login'))
+        
+        # Get pending transfers
+        pending_transfers = fetch_all(conn, '''
+            SELECT tr.*, to_club.name as to_club_name
+            FROM transfer_requests tr
+            JOIN clubs to_club ON tr.to_club_id = to_club.id
+            WHERE tr.player_id = ? AND tr.status IN ('pending', 'approved_by_from')
+        ''', (session['user_id'],))
+        
+        # Calculate age from date of birth
+        try:
+            birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
+            today = date.today()
+            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        except (ValueError, KeyError):
+            age = 'N/A'
+        
+        return render_template('dashboard.html', player=player, age=age, pending_transfers=pending_transfers)
+    except Exception as e:
+        flash(f'Error loading dashboard: {str(e)}', 'error')
+        return redirect(url_for('login'))
+    finally:
+        conn.close()
 
 @app.route('/manage_lineup', methods=['GET', 'POST'])
 def manage_lineup():
@@ -1879,7 +1896,7 @@ def manage_lineup():
                              current_lineups=current_lineups)
     
     except Exception as e:
-        flash('Error saving lineup', 'error')
+        flash(f'Error saving lineup: {str(e)}', 'error')
         return redirect(url_for('club_dashboard'))
     finally:
         conn.close()
@@ -1959,7 +1976,7 @@ def public_match_details(match_id):
                              away_lineup=away_lineup)
         
     except Exception as e:
-        flash('Error loading match details.', 'error')
+        flash(f'Error loading match details: {str(e)}', 'error')
         return redirect(url_for('index'))
     finally:
         conn.close()
@@ -1986,82 +2003,97 @@ def get_lineup(competition_id):
 @app.route('/players')
 def players():
     conn = get_db_connection()
-    players = fetch_all(conn, '''
-        SELECT p.*, c.name as club_name 
-        FROM players p 
-        JOIN clubs c ON p.club_id = c.id 
-        ORDER BY p.goals DESC, p.assists DESC
-    ''')
-    
-    # Calculate age for each player
-    players_with_age = []
-    for player in players:
-        try:
-            birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
-            today = date.today()
-            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-        except (ValueError, KeyError):
-            age = 'N/A'
-        players_with_age.append((player, age))
-    
-    conn.close()
-    return render_template('players.html', players=players_with_age)
+    try:
+        players = fetch_all(conn, '''
+            SELECT p.*, c.name as club_name 
+            FROM players p 
+            JOIN clubs c ON p.club_id = c.id 
+            ORDER BY p.goals DESC, p.assists DESC
+        ''')
+        
+        # Calculate age for each player
+        players_with_age = []
+        for player in players:
+            try:
+                birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
+                today = date.today()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            except (ValueError, KeyError):
+                age = 'N/A'
+            players_with_age.append((player, age))
+        
+        return render_template('players.html', players=players_with_age)
+    except Exception as e:
+        flash(f'Error loading players: {str(e)}', 'error')
+        return redirect(url_for('index'))
+    finally:
+        conn.close()
 
 @app.route('/clubs')
 def clubs():
     conn = get_db_connection()
-    clubs = fetch_all(conn, 'SELECT * FROM clubs WHERE approved = TRUE')
-    conn.close()
-    return render_template('clubs.html', clubs=clubs)
+    try:
+        clubs = fetch_all(conn, 'SELECT * FROM clubs WHERE approved = TRUE')
+        return render_template('clubs.html', clubs=clubs)
+    except Exception as e:
+        flash(f'Error loading clubs: {str(e)}', 'error')
+        return redirect(url_for('index'))
+    finally:
+        conn.close()
 
 @app.route('/register_club', methods=['GET', 'POST'])
 def register_club():
     if request.method == 'POST':
-        name = request.form['name']
-        local_government = request.form['local_government']
-        email = request.form['email']
-        phone = request.form['phone']
-        password = request.form['password']
+        try:
+            name = request.form['name']
+            local_government = request.form['local_government']
+            email = request.form['email']
+            phone = request.form['phone']
+            password = request.form['password']
+            
+            conn = get_db_connection()
+            try:
+                # Check if club already exists
+                existing_club = fetch_one(conn,
+                    'SELECT id FROM clubs WHERE name = ? OR email = ?', 
+                    (name, email)
+                )
+                
+                if existing_club:
+                    flash('Club name or email already exists.', 'error')
+                    return render_template('register_club.html', local_governments=LOCAL_GOVERNMENTS)
+                
+                # Handle logo upload
+                logo = None
+                if 'logo' in request.files:
+                    file = request.files['logo']
+                    if file and file.filename != '':
+                        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                        if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                            filename = secure_filename(f"{name}_{file.filename}")
+                            file_url = storage.upload_file(file, filename, 'club-logos')
+                            if file_url:
+                                logo = file_url
+                            else:
+                                flash('Error uploading logo', 'error')
+                        else:
+                            flash('Invalid file type', 'error')
+                
+                # Insert club into database (initially not approved)
+                execute_sql(conn, '''
+                    INSERT INTO clubs (name, local_government, email, phone, password, logo, approved)
+                    VALUES (?, ?, ?, ?, ?, ?, FALSE)
+                ''', (name, local_government, email, phone, password, logo))
+                
+                conn.commit()
+                flash('Registration submitted! Your club is pending admin approval. You will be notified once approved.', 'success')
+                return redirect(url_for('index'))
+            finally:
+                conn.close()
         
-        conn = get_db_connection()
-        
-        # Check if club already exists
-        existing_club = fetch_one(conn,
-            'SELECT id FROM clubs WHERE name = ? OR email = ?', 
-            (name, email)
-        )
-        
-        if existing_club:
-            flash('Club name or email already exists.', 'error')
+        except Exception as e:
+            flash(f'Registration failed: {str(e)}', 'error')
             return render_template('register_club.html', local_governments=LOCAL_GOVERNMENTS)
-        
-        # Handle logo upload
-        logo = None
-        if 'logo' in request.files:
-            file = request.files['logo']
-            if file and file.filename != '':
-                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-                if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
-                    filename = secure_filename(f"{name}_{file.filename}")
-                    file_url = storage.upload_file(file, filename, 'club-logos')
-                    if file_url:
-                        logo = file_url
-                    else:
-                        flash('Error uploading logo', 'error')
-                else:
-                    flash('Invalid file type', 'error')
-        
-        # Insert club into database (initially not approved)
-        execute_sql(conn, '''
-            INSERT INTO clubs (name, local_government, email, phone, password, logo, approved)
-            VALUES (?, ?, ?, ?, ?, ?, FALSE)
-        ''', (name, local_government, email, phone, password, logo))
-        
-        conn.commit()
-        conn.close()
-        
-        flash('Registration submitted! Your club is pending admin approval. You will be notified once approved.', 'success')
-        return redirect(url_for('index'))
     
     return render_template('register_club.html', local_governments=LOCAL_GOVERNMENTS)
 
@@ -2071,27 +2103,32 @@ def club_dashboard():
         return redirect(url_for('login'))
     
     conn = get_db_connection()
-    club = fetch_one(conn, 'SELECT * FROM clubs WHERE id = ?', (session['user_id'],))
-    
-    # Only fetch approved players for main roster
-    players = fetch_all(conn, 'SELECT * FROM players WHERE club_id = ? AND status = ?', 
-                      (session['user_id'], 'approved'))
-    
-    # Get pending players count for the badge
-    pending_count = fetch_one(conn, 'SELECT COUNT(*) FROM players WHERE club_id = ? AND status = ?', 
-                            (session['user_id'], 'pending'))[0]
-    
-    competitions = fetch_all(conn, '''
-        SELECT c.*, cr.status 
-        FROM competitions c 
-        JOIN competition_registrations cr ON c.id = cr.competition_id 
-        WHERE cr.club_id = ?
-    ''', (session['user_id'],))
-    
-    conn.close()
-    
-    return render_template('club_dashboard.html', club=club, players=players, 
-                         pending_count=pending_count, competitions=competitions)
+    try:
+        club = fetch_one(conn, 'SELECT * FROM clubs WHERE id = ?', (session['user_id'],))
+        
+        # Only fetch approved players for main roster
+        players = fetch_all(conn, 'SELECT * FROM players WHERE club_id = ? AND status = ?', 
+                          (session['user_id'], 'approved'))
+        
+        # Get pending players count for the badge
+        pending_count_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM players WHERE club_id = ? AND status = ?', 
+                                      (session['user_id'], 'pending'))
+        pending_count = pending_count_result['count'] if pending_count_result else 0
+        
+        competitions = fetch_all(conn, '''
+            SELECT c.*, cr.status 
+            FROM competitions c 
+            JOIN competition_registrations cr ON c.id = cr.competition_id 
+            WHERE cr.club_id = ?
+        ''', (session['user_id'],))
+        
+        return render_template('club_dashboard.html', club=club, players=players, 
+                             pending_count=pending_count, competitions=competitions)
+    except Exception as e:
+        flash(f'Error loading club dashboard: {str(e)}', 'error')
+        return redirect(url_for('login'))
+    finally:
+        conn.close()
 
 @app.route('/club/player_approvals')
 def club_player_approvals():
@@ -2099,26 +2136,29 @@ def club_player_approvals():
         return redirect(url_for('login'))
     
     conn = get_db_connection()
-    
-    # Get pending players for this club
-    pending_players = fetch_all(conn, '''
-        SELECT * FROM players 
-        WHERE club_id = ? AND status = ?
-        ORDER BY id DESC
-    ''', (session['user_id'], 'pending'))
-    
-    # Get approved players for this club
-    approved_players = fetch_all(conn, '''
-        SELECT * FROM players 
-        WHERE club_id = ? AND status = ?
-        ORDER BY fullname
-    ''', (session['user_id'], 'approved'))
-    
-    conn.close()
-    
-    return render_template('club_player_approvals.html', 
-                         pending_players=pending_players,
-                         approved_players=approved_players)
+    try:
+        # Get pending players for this club
+        pending_players = fetch_all(conn, '''
+            SELECT * FROM players 
+            WHERE club_id = ? AND status = ?
+            ORDER BY id DESC
+        ''', (session['user_id'], 'pending'))
+        
+        # Get approved players for this club
+        approved_players = fetch_all(conn, '''
+            SELECT * FROM players 
+            WHERE club_id = ? AND status = ?
+            ORDER BY fullname
+        ''', (session['user_id'], 'approved'))
+        
+        return render_template('club_player_approvals.html', 
+                             pending_players=pending_players,
+                             approved_players=approved_players)
+    except Exception as e:
+        flash(f'Error loading player approvals: {str(e)}', 'error')
+        return redirect(url_for('club_dashboard'))
+    finally:
+        conn.close()
 
 @app.route('/club/approve_player/<int:player_id>')
 def club_approve_player(player_id):
@@ -2126,23 +2166,27 @@ def club_approve_player(player_id):
         return redirect(url_for('login'))
     
     conn = get_db_connection()
-    
-    # Verify the player belongs to this club
-    player = fetch_one(conn, 'SELECT * FROM players WHERE id = ? AND club_id = ?', 
-                     (player_id, session['user_id']))
-    
-    if not player:
-        flash('Player not found or you do not have permission to approve this player.', 'error')
+    try:
+        # Verify the player belongs to this club
+        player = fetch_one(conn, 'SELECT * FROM players WHERE id = ? AND club_id = ?', 
+                         (player_id, session['user_id']))
+        
+        if not player:
+            flash('Player not found or you do not have permission to approve this player.', 'error')
+            return redirect(url_for('club_player_approvals'))
+        
+        # Update status to approved
+        execute_sql(conn, 'UPDATE players SET status = ? WHERE id = ?', 
+                    ('approved', player_id))
+        conn.commit()
+        flash('Player approved successfully!', 'success')
         return redirect(url_for('club_player_approvals'))
-    
-    # Update status to approved
-    execute_sql(conn, 'UPDATE players SET status = ? WHERE id = ?', 
-                ('approved', player_id))
-    conn.commit()
-    conn.close()
-    
-    flash('Player approved successfully!', 'success')
-    return redirect(url_for('club_player_approvals'))
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error approving player: {str(e)}', 'error')
+        return redirect(url_for('club_player_approvals'))
+    finally:
+        conn.close()
 
 @app.route('/club/reject_player/<int:player_id>')
 def club_reject_player(player_id):
@@ -2150,60 +2194,69 @@ def club_reject_player(player_id):
         return redirect(url_for('login'))
     
     conn = get_db_connection()
-    
-    # Verify the player belongs to this club
-    player = fetch_one(conn, 'SELECT * FROM players WHERE id = ? AND club_id = ?', 
-                     (player_id, session['user_id']))
-    
-    if not player:
-        flash('Player not found or you do not have permission to reject this player.', 'error')
+    try:
+        # Verify the player belongs to this club
+        player = fetch_one(conn, 'SELECT * FROM players WHERE id = ? AND club_id = ?', 
+                         (player_id, session['user_id']))
+        
+        if not player:
+            flash('Player not found or you do not have permission to reject this player.', 'error')
+            return redirect(url_for('club_player_approvals'))
+        
+        # Update status to rejected
+        execute_sql(conn, 'UPDATE players SET status = ? WHERE id = ?', 
+                    ('rejected', player_id))
+        conn.commit()
+        flash('Player registration rejected.', 'success')
         return redirect(url_for('club_player_approvals'))
-    
-    # Update status to rejected
-    execute_sql(conn, 'UPDATE players SET status = ? WHERE id = ?', 
-                ('rejected', player_id))
-    conn.commit()
-    conn.close()
-    
-    flash('Player registration rejected.', 'success')
-    return redirect(url_for('club_player_approvals'))
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error rejecting player: {str(e)}', 'error')
+        return redirect(url_for('club_player_approvals'))
+    finally:
+        conn.close()
 
 @app.route('/competitions')
 def competitions():
     conn = get_db_connection()
-    competitions = fetch_all(conn, 'SELECT * FROM competitions WHERE is_active = TRUE')
-    
-    # Create a list to store competition data with top scorers
-    competition_data = []
-    
-    for comp in competitions:
-        # Get top scorers for this competition
-        top_scorers = fetch_all(conn, '''
-            SELECT p.fullname, p.profile_picture, c.name as club_name, COUNT(me.id) as goals
-            FROM match_events me
-            JOIN players p ON me.player_id = p.id
-            JOIN clubs c ON p.club_id = c.id
-            WHERE me.competition_id = ? AND me.event_type = 'goal'
-            GROUP BY p.id
-            ORDER BY goals DESC
-            LIMIT 5
-        ''', (comp['id'],))
+    try:
+        competitions = fetch_all(conn, 'SELECT * FROM competitions WHERE is_active = TRUE')
         
-        # Create a dictionary with competition data and top scorers
-        comp_data = {
-            'id': comp['id'],
-            'name': comp['name'],
-            'description': comp['description'],
-            'start_date': comp['start_date'],
-            'end_date': comp['end_date'],
-            'registration_deadline': comp['registration_deadline'],
-            'is_active': comp['is_active'],
-            'top_scorers': top_scorers
-        }
-        competition_data.append(comp_data)
-    
-    conn.close()
-    return render_template('competitions.html', competitions=competition_data)
+        # Create a list to store competition data with top scorers
+        competition_data = []
+        
+        for comp in competitions:
+            # Get top scorers for this competition
+            top_scorers = fetch_all(conn, '''
+                SELECT p.fullname, p.profile_picture, c.name as club_name, COUNT(me.id) as goals
+                FROM match_events me
+                JOIN players p ON me.player_id = p.id
+                JOIN clubs c ON p.club_id = c.id
+                WHERE me.competition_id = ? AND me.event_type = 'goal'
+                GROUP BY p.id
+                ORDER BY goals DESC
+                LIMIT 5
+            ''', (comp['id'],))
+            
+            # Create a dictionary with competition data and top scorers
+            comp_data = {
+                'id': comp['id'],
+                'name': comp['name'],
+                'description': comp['description'],
+                'start_date': comp['start_date'],
+                'end_date': comp['end_date'],
+                'registration_deadline': comp['registration_deadline'],
+                'is_active': comp['is_active'],
+                'top_scorers': top_scorers
+            }
+            competition_data.append(comp_data)
+        
+        return render_template('competitions.html', competitions=competition_data)
+    except Exception as e:
+        flash(f'Error loading competitions: {str(e)}', 'error')
+        return redirect(url_for('index'))
+    finally:
+        conn.close()
 
 @app.route('/lineup')
 def lineup():
@@ -2321,18 +2374,19 @@ def internal_error(error):
     traceback.print_exc()
     return "Internal Server Error", 500
 
-backup_database()
-atexit.register(backup_database)
-
 if __name__ == '__main__':
-    from database import init_db, migrate_database, backup_database, fix_match_events_table, clean_duplicate_competitions, create_transfer_requests_table, update_transfer_requests_table
-    init_db()
-    migrate_database()
-    fix_match_events_table()
-    clean_duplicate_competitions()
-    create_transfer_requests_table()
-    update_transfer_requests_table()
-    backup_database()
-    
+    from database import init_db, fix_match_events_table, clean_duplicate_competitions, create_transfer_requests_table, update_transfer_requests_table
+    try:
+        init_db()
+        fix_match_events_table()
+        clean_duplicate_competitions()
+        create_transfer_requests_table()
+        update_transfer_requests_table()
+        print("✅ Database initialization completed successfully")
+    except Exception as e:
+        print(f"❌ Database initialization failed: {e}")
+        import traceback
+        traceback.print_exc()
+        
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
