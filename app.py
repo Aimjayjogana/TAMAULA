@@ -1203,6 +1203,8 @@ def admin_pending_clubs():
                              approved_clubs=approved_clubs)
     except Exception as e:
         flash(f'Error loading pending clubs: {str(e)}', 'error')
+        import traceback
+        print(f"Pending clubs error: {traceback.format_exc()}")
         return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
