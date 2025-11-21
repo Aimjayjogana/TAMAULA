@@ -270,7 +270,69 @@ def create_sqlite_database():
                 FOREIGN KEY (player_id) REFERENCES players (id)
             )
         ''')
-        
+
+                    # Group stage tables
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS competition_groups (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                competition_id INTEGER,
+                group_name TEXT NOT NULL,
+                FOREIGN KEY (competition_id) REFERENCES competitions (id)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                competition_id INTEGER,
+                group_id INTEGER,
+                club_id INTEGER,
+                FOREIGN KEY (competition_id) REFERENCES competitions (id),
+                FOREIGN KEY (group_id) REFERENCES competition_groups (id),
+                FOREIGN KEY (club_id) REFERENCES clubs (id)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_matches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                competition_id INTEGER,
+                group_id INTEGER,
+                home_club_id INTEGER,
+                away_club_id INTEGER,
+                match_date DATE,
+                match_time TIME,
+                location TEXT,
+                home_score INTEGER DEFAULT 0,
+                away_score INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'scheduled',
+                FOREIGN KEY (competition_id) REFERENCES competitions (id),
+                FOREIGN KEY (group_id) REFERENCES competition_groups (id),
+                FOREIGN KEY (home_club_id) REFERENCES clubs (id),
+                FOREIGN KEY (away_club_id) REFERENCES clubs (id)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_standings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                competition_id INTEGER,
+                group_id INTEGER,
+                club_id INTEGER,
+                matches_played INTEGER DEFAULT 0,
+                wins INTEGER DEFAULT 0,
+                draws INTEGER DEFAULT 0,
+                losses INTEGER DEFAULT 0,
+                goals_for INTEGER DEFAULT 0,
+                goals_against INTEGER DEFAULT 0,
+                points INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'active',
+                FOREIGN KEY (competition_id) REFERENCES competitions (id),
+                FOREIGN KEY (group_id) REFERENCES competition_groups (id),
+                FOREIGN KEY (club_id) REFERENCES clubs (id)
+            )
+        ''')
+
         competitions_exist = cursor.execute('SELECT COUNT(*) FROM competitions').fetchone()[0]
         
         if competitions_exist == 0:
@@ -431,6 +493,56 @@ def create_postgresql_database():
             )
         ''')
         
+        # Group stage tables
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS competition_groups (
+                id SERIAL PRIMARY KEY,
+                competition_id INTEGER REFERENCES competitions(id),
+                group_name TEXT NOT NULL
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_assignments (
+                id SERIAL PRIMARY KEY,
+                competition_id INTEGER REFERENCES competitions(id),
+                group_id INTEGER REFERENCES competition_groups(id),
+                club_id INTEGER REFERENCES clubs(id)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_matches (
+                id SERIAL PRIMARY KEY,
+                competition_id INTEGER REFERENCES competitions(id),
+                group_id INTEGER REFERENCES competition_groups(id),
+                home_club_id INTEGER REFERENCES clubs(id),
+                away_club_id INTEGER REFERENCES clubs(id),
+                match_date DATE,
+                match_time TIME,
+                location TEXT,
+                home_score INTEGER DEFAULT 0,
+                away_score INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'scheduled'
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_standings (
+                id SERIAL PRIMARY KEY,
+                competition_id INTEGER REFERENCES competitions(id),
+                group_id INTEGER REFERENCES competition_groups(id),
+                club_id INTEGER REFERENCES clubs(id),
+                matches_played INTEGER DEFAULT 0,
+                wins INTEGER DEFAULT 0,
+                draws INTEGER DEFAULT 0,
+                losses INTEGER DEFAULT 0,
+                goals_for INTEGER DEFAULT 0,
+                goals_against INTEGER DEFAULT 0,
+                points INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'active'
+            )
+        ''')
+
         # Insert default admin user (PostgreSQL version)
         cursor.execute('''
             INSERT INTO admins (username, password, email)
