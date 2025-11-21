@@ -104,28 +104,71 @@ def fetch_all(conn, sql, params=None):
     return results
 
 def init_db():
-    """Initialize database - works for both SQLite and PostgreSQL"""
-    db_type = get_db_config()
+    """Create all tables – works on Render PostgreSQL"""
     conn = get_db_connection()
-    
+    cursor = conn.cursor()
+
+    # List of CREATE TABLE statements (copy from your create_postgresql_database() or SQLite, but make sure they use SERIAL)
+    tables = [
+        """
+        CREATE TABLE IF NOT EXISTS clubs (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            local_government TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            phone TEXT,
+            password TEXT NOT NULL,
+            logo TEXT,
+            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            approved BOOLEAN DEFAULT FALSE
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS players (
+            id SERIAL PRIMARY KEY,
+            fullname TEXT NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            phone TEXT,
+            date_of_birth DATE NOT NULL,
+            jersey_number INTEGER,
+            gender TEXT,
+            profile_picture TEXT,
+            club_id INTEGER REFERENCES clubs(id),
+            goals INTEGER DEFAULT 0,
+            assists INTEGER DEFAULT 0,
+            yellow_cards INTEGER DEFAULT 0,
+            red_cards INTEGER DEFAULT 0,
+            password TEXT NOT NULL,
+            status TEXT DEFAULT 'pending'
+        )
+        """,
+        # Add ALL your other tables here exactly as they are in create_postgresql_database()
+        # competitions, matches, match_events, transfer_requests, admins, etc.
+        """
+        CREATE TABLE IF NOT EXISTS admins (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL
+        )
+        """,
+        """
+        INSERT INTO admins (username, password, email)
+        VALUES ('admin', 'admin123', 'admin@tamaula.com')
+        ON CONFLICT (username) DO NOTHING
+        """
+    ]
+
     try:
-        if db_type == 'sqlite':
-            create_sqlite_database()
-        else:
-            create_postgresql_database()
-        
-        # Run migrations and fixes
-        migrate_database()
-        fix_match_events_table()
-        clean_duplicate_competitions()
-        create_transfer_requests_table()
-        update_transfer_requests_table()
-        
+        for table_sql in tables:
+            cursor.execute(table_sql)
         conn.commit()
-        print("✅ Database initialized successfully")
+        print("✅ All tables created successfully on PostgreSQL!")
     except Exception as e:
         conn.rollback()
-        print(f"❌ Database initialization error: {e}")
+        print(f"❌ Error creating tables: {e}")
+        raise e
     finally:
         conn.close()
 
