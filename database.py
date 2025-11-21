@@ -55,6 +55,10 @@ def execute_sql(conn, sql, params=None):
     """Execute SQL query with proper parameter handling for both databases"""
     db_type = get_db_config()
     
+    # Convert SQLite-style ? placeholders to PostgreSQL-style %s
+    if db_type == 'postgresql' and '?' in sql:
+        sql = sql.replace('?', '%s')
+    
     cursor = conn.cursor()
     
     try:
@@ -267,68 +271,6 @@ def create_sqlite_database():
             )
         ''')
         
-        # Group stage tables
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS competition_groups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                competition_id INTEGER,
-                group_name TEXT NOT NULL,
-                FOREIGN KEY (competition_id) REFERENCES competitions (id)
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_assignments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                competition_id INTEGER,
-                group_id INTEGER,
-                club_id INTEGER,
-                FOREIGN KEY (competition_id) REFERENCES competitions (id),
-                FOREIGN KEY (group_id) REFERENCES competition_groups (id),
-                FOREIGN KEY (club_id) REFERENCES clubs (id)
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_matches (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                competition_id INTEGER,
-                group_id INTEGER,
-                home_club_id INTEGER,
-                away_club_id INTEGER,
-                match_date DATE,
-                match_time TIME,
-                location TEXT,
-                home_score INTEGER DEFAULT 0,
-                away_score INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'scheduled',
-                FOREIGN KEY (competition_id) REFERENCES competitions (id),
-                FOREIGN KEY (group_id) REFERENCES competition_groups (id),
-                FOREIGN KEY (home_club_id) REFERENCES clubs (id),
-                FOREIGN KEY (away_club_id) REFERENCES clubs (id)
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_standings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                competition_id INTEGER,
-                group_id INTEGER,
-                club_id INTEGER,
-                matches_played INTEGER DEFAULT 0,
-                wins INTEGER DEFAULT 0,
-                draws INTEGER DEFAULT 0,
-                losses INTEGER DEFAULT 0,
-                goals_for INTEGER DEFAULT 0,
-                goals_against INTEGER DEFAULT 0,
-                points INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'active',
-                FOREIGN KEY (competition_id) REFERENCES competitions (id),
-                FOREIGN KEY (group_id) REFERENCES competition_groups (id),
-                FOREIGN KEY (club_id) REFERENCES clubs (id)
-            )
-        ''')
-        
         competitions_exist = cursor.execute('SELECT COUNT(*) FROM competitions').fetchone()[0]
         
         if competitions_exist == 0:
@@ -489,57 +431,6 @@ def create_postgresql_database():
             )
         ''')
         
-        # Group stage tables
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS competition_groups (
-                id SERIAL PRIMARY KEY,
-                competition_id INTEGER REFERENCES competitions(id),
-                group_name TEXT NOT NULL
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_assignments (
-                id SERIAL PRIMARY KEY,
-                competition_id INTEGER REFERENCES competitions(id),
-                group_id INTEGER REFERENCES competition_groups(id),
-                club_id INTEGER REFERENCES clubs(id)
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_matches (
-                id SERIAL PRIMARY KEY,
-                competition_id INTEGER REFERENCES competitions(id),
-                group_id INTEGER REFERENCES competition_groups(id),
-                home_club_id INTEGER REFERENCES clubs(id),
-                away_club_id INTEGER REFERENCES clubs(id),
-                match_date DATE,
-                match_time TIME,
-                location TEXT,
-                home_score INTEGER DEFAULT 0,
-                away_score INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'scheduled'
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_standings (
-                id SERIAL PRIMARY KEY,
-                competition_id INTEGER REFERENCES competitions(id),
-                group_id INTEGER REFERENCES competition_groups(id),
-                club_id INTEGER REFERENCES clubs(id),
-                matches_played INTEGER DEFAULT 0,
-                wins INTEGER DEFAULT 0,
-                draws INTEGER DEFAULT 0,
-                losses INTEGER DEFAULT 0,
-                goals_for INTEGER DEFAULT 0,
-                goals_against INTEGER DEFAULT 0,
-                points INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'active'
-            )
-        ''')
-        
         # Insert default admin user (PostgreSQL version)
         cursor.execute('''
             INSERT INTO admins (username, password, email)
@@ -549,7 +440,8 @@ def create_postgresql_database():
         
         # Check if competitions already exist
         cursor.execute('SELECT COUNT(*) FROM competitions')
-        competitions_exist = cursor.fetchone()['count']
+        result = cursor.fetchone()
+        competitions_exist = result['count'] if result else 0
         
         if competitions_exist == 0:
             cursor.execute('''
@@ -764,91 +656,6 @@ def create_new_database():
         create_sqlite_database()
     else:
         create_postgresql_database()
-
-# ENHANCED BACKUP SYSTEM WITH CLOUDFLARE R2
-def backup_database():
-    """Create a backup and store in Cloudflare R2"""
-    try:
-        data = export_data()
-        
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_filename = f"backup_{timestamp}.json"
-        
-        if get_db_config() == 'postgresql':
-            upload_to_r2(json.dumps(data, indent=2), backup_filename)
-        
-        return {
-            'status': 'success',
-            'filename': backup_filename,
-            'data': data
-        }
-    except Exception as e:
-        return {'status': 'error', 'message': str(e)}
-
-def upload_to_r2(data, filename):
-    """Upload backup to Cloudflare R2"""
-    try:
-        import boto3
-        s3 = boto3.client('s3',
-            endpoint_url=os.getenv('R2_ENDPOINT'),
-            aws_access_key_id=os.getenv('R2_ACCESS_KEY'),
-            aws_secret_access_key=os.getenv('R2_SECRET_KEY'),
-            region_name='auto'
-        )
-        
-        s3.put_object(
-            Bucket=os.getenv('R2_BACKUP_BUCKET'),
-            Key=f"backups/{filename}",
-            Body=data.encode('utf-8'),
-            ContentType='application/json'
-        )
-        return True
-    except Exception as e:
-        print(f"❌ R2 upload failed: {e}")
-        return False
-
-def export_data():
-    """Export all data to JSON files"""
-    conn = get_db_connection()
-    data = {}
-    
-    try:
-        # Export clubs
-        clubs = fetch_all(conn, 'SELECT * FROM clubs')
-        data['clubs'] = clubs
-        
-        # Export players
-        players = fetch_all(conn, 'SELECT * FROM players')
-        data['players'] = players
-        
-        # Export competitions
-        competitions = fetch_all(conn, 'SELECT * FROM competitions')
-        data['competitions'] = competitions
-        
-        # Export match_events
-        match_events = fetch_all(conn, 'SELECT * FROM match_events')
-        data['match_events'] = match_events
-        
-        # Export matches
-        matches = fetch_all(conn, 'SELECT * FROM matches')
-        data['matches'] = matches
-        
-        print("✅ Data exported successfully")
-        return data
-        
-    except Exception as e:
-        print(f"❌ Export error: {e}")
-        return {}
-    finally:
-        conn.close()
-
-def restore_latest_backup():
-    """Restore from the latest backup"""
-    return False
-
-def import_data():
-    """Import data from JSON backup"""
-    return False
 
 # Add this function to help with database debugging
 def check_database_connection():
