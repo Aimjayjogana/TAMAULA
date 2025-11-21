@@ -197,15 +197,6 @@
     </div>
 </div>
 
-<div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
-    <h4>Data Management</h4>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <a href="{{ url_for('admin_backup') }}" class="btn" style="background: var(--success);">Backup Database</a>
-        <a href="{{ url_for('admin_restore') }}" class="btn" style="background: var(--warning);">Restore Database</a>
-        <a href="{{ url_for('admin_export_data') }}" class="btn" style="background: var(--primary);">Export to JSON</a>
-        <a href="{{ url_for('admin_import_data') }}" class="btn" style="background: var(--secondary);">Import from JSON</a>
-    </div>
-</div>
 
 <!-- Approval Modal -->
 <div id="approvalModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
