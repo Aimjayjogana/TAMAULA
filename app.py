@@ -1188,23 +1188,32 @@ def admin_pending_clubs():
     
     conn = get_db_connection()
     try:
+        print("🔄 Loading pending clubs...")
+        
         # Get pending clubs
-        pending_clubs = fetch_all(conn, '''
-            SELECT * FROM clubs WHERE approved = FALSE ORDER BY registration_date DESC
+        pending_clubs_result = fetch_all(conn, '''
+            SELECT id, name, local_government, email, phone, logo, registration_date 
+            FROM clubs WHERE approved = FALSE ORDER BY registration_date DESC
         ''')
         
         # Get approved clubs
-        approved_clubs = fetch_all(conn, '''
-            SELECT * FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
+        approved_clubs_result = fetch_all(conn, '''
+            SELECT id, name, local_government, email, phone, logo, registration_date 
+            FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
         ''')
         
+        print(f"✅ Found {len(pending_clubs_result)} pending clubs and {len(approved_clubs_result)} approved clubs")
+        
         return render_template('admin_pending_clubs.html', 
-                             pending_clubs=pending_clubs,
-                             approved_clubs=approved_clubs)
+                             pending_clubs=pending_clubs_result,
+                             approved_clubs=approved_clubs_result)
+        
     except Exception as e:
-        flash(f'Error loading pending clubs: {str(e)}', 'error')
+        error_msg = f'Error loading pending clubs: {str(e)}'
+        flash(error_msg, 'error')
+        print(f"❌ {error_msg}")
         import traceback
-        print(f"Pending clubs error: {traceback.format_exc()}")
+        traceback.print_exc()
         return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
