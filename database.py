@@ -49,27 +49,23 @@ def get_sqlite_connection():
     return conn
 
 def execute_sql(conn, sql, params=None):
-    """Execute SQL that works for both SQLite and PostgreSQL"""
     db_type = get_db_config()
-    
-    # Convert parameter placeholders if needed
-    if db_type == 'postgresql' and '?' in sql:
-        sql = sql.replace('?', '%s')
     
     cursor = conn.cursor()
     
     try:
-        if params:
-            cursor.execute(sql, params)
-        else:
+        if params is None:
             cursor.execute(sql)
+        else:
+            cursor.execute(sql, params)
         return cursor
     except Exception as e:
         print(f"❌ SQL Error: {e}")
         print(f"   SQL: {sql}")
         print(f"   Params: {params}")
+        conn.rollback()
         raise e
-
+    
 def fetch_one(conn, sql, params=None):
     """Fetch one row - converts to dictionary"""
     cursor = execute_sql(conn, sql, params)
