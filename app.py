@@ -803,11 +803,11 @@ def admin_dashboard():
         # Get pending registrations
         pending_registrations = fetch_all(conn, '''
             SELECT cr.*, c.name as club_name, comp.name as competition_name,
-                   clubs.local_government, clubs.email as club_email
+                   cl.local_government, cl.email as club_email
             FROM competition_registrations cr
             JOIN clubs c ON cr.club_id = c.id
             JOIN competitions comp ON cr.competition_id = comp.id
-            JOIN clubs ON cr.club_id = clubs.id
+            JOIN clubs cl ON cr.club_id = cl.id
             WHERE cr.status = 'pending'
             ORDER BY cr.registration_date DESC
         ''')
@@ -815,11 +815,11 @@ def admin_dashboard():
         # Get approved registrations
         approved_registrations = fetch_all(conn, '''
             SELECT cr.*, c.name as club_name, comp.name as competition_name,
-                   clubs.local_government, a.username as approved_by_admin
+                   cl.local_government, a.username as approved_by_admin
             FROM competition_registrations cr
             JOIN clubs c ON cr.club_id = c.id
             JOIN competitions comp ON cr.competition_id = comp.id
-            JOIN clubs ON cr.club_id = clubs.id
+            JOIN clubs cl ON cr.club_id = cl.id
             LEFT JOIN admins a ON cr.approved_by = a.id
             WHERE cr.status = 'approved'
             ORDER BY cr.approved_date DESC
@@ -828,11 +828,11 @@ def admin_dashboard():
         # Get rejected registrations
         rejected_registrations = fetch_all(conn, '''
             SELECT cr.*, c.name as club_name, comp.name as competition_name,
-                   clubs.local_government
+                   cl.local_government
             FROM competition_registrations cr
             JOIN clubs c ON cr.club_id = c.id
             JOIN competitions comp ON cr.competition_id = comp.id
-            JOIN clubs ON cr.club_id = clubs.id
+            JOIN clubs cl ON cr.club_id = cl.id
             WHERE cr.status = 'rejected'
             ORDER BY cr.registration_date DESC
         ''')
@@ -844,11 +844,15 @@ def admin_dashboard():
             ORDER BY name
         ''')
         
-        # Statistics
+        # Statistics - FIXED: Properly handle count results
+        total_clubs_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM clubs')
+        total_players_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM players')
+        total_competitions_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM competitions')
+        
         stats = {
-            'total_clubs': fetch_one(conn, 'SELECT COUNT(*) FROM clubs')[0],
-            'total_players': fetch_one(conn, 'SELECT COUNT(*) FROM players')[0],
-            'total_competitions': fetch_one(conn, 'SELECT COUNT(*) FROM competitions')[0],
+            'total_clubs': total_clubs_result['count'] if total_clubs_result else 0,
+            'total_players': total_players_result['count'] if total_players_result else 0,
+            'total_competitions': total_competitions_result['count'] if total_competitions_result else 0,
             'pending_registrations': len(pending_registrations),
             'approved_registrations': len(approved_registrations),
         }
@@ -861,6 +865,8 @@ def admin_dashboard():
                              active_competitions=active_competitions)
     except Exception as e:
         flash(f'Error loading admin dashboard: {str(e)}', 'error')
+        import traceback
+        print(f"Admin dashboard error: {traceback.format_exc()}")
         return redirect(url_for('admin_login'))
     finally:
         conn.close()
