@@ -67,6 +67,10 @@ LOCAL_GOVERNMENTS = {
     "Wudil": ["Wudil FC", "Wudil United", "Garko FC"]
 }
 
+@app.route('/init-db')
+def init_database():
+    init_db()
+    
 @app.route('/')
 def index():
     return render_template('index.html')
