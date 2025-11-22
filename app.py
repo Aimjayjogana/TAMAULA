@@ -1195,11 +1195,30 @@ def admin_pending_clubs():
             FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
         ''')
         
-        print(f"✅ Found {len(pending_clubs_result)} pending clubs and {len(approved_clubs_result)} approved clubs")
+        # Format dates for both lists
+        def format_club_dates(clubs_list):
+            formatted = []
+            for club in clubs_list:
+                club_data = dict(club)
+                registration_date = club_data.get('registration_date')
+                if registration_date:
+                    if hasattr(registration_date, 'strftime'):
+                        club_data['registration_date'] = registration_date.strftime('%Y-%m-%d')
+                    else:
+                        club_data['registration_date'] = str(registration_date)[:10]
+                else:
+                    club_data['registration_date'] = 'N/A'
+                formatted.append(club_data)
+            return formatted
+        
+        pending_clubs = format_club_dates(pending_clubs_result)
+        approved_clubs = format_club_dates(approved_clubs_result)
+        
+        print(f"✅ Found {len(pending_clubs)} pending clubs and {len(approved_clubs)} approved clubs")
         
         return render_template('admin_pending_clubs.html', 
-                             pending_clubs=pending_clubs_result,
-                             approved_clubs=approved_clubs_result)
+                             pending_clubs=pending_clubs,
+                             approved_clubs=approved_clubs)
         
     except Exception as e:
         error_msg = f'Error loading pending clubs: {str(e)}'
@@ -1828,12 +1847,18 @@ def dashboard():
             WHERE tr.player_id = ? AND tr.status IN ('pending', 'approved_by_from')
         ''', (session['user_id'],))
         
-        # Calculate age from date of birth
+        # Calculate age from date of birth - FIXED VERSION
         try:
-            birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
+            # Check if date_of_birth is already a date object or string
+            if isinstance(player['date_of_birth'], str):
+                birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
+            else:
+                birth_date = player['date_of_birth']
+            
             today = date.today()
             age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, TypeError) as e:
+            print(f"Age calculation error: {e}")
             age = 'N/A'
         
         return render_template('dashboard.html', player=player, age=age, pending_transfers=pending_transfers)
@@ -2021,15 +2046,22 @@ def players():
             ORDER BY p.goals DESC, p.assists DESC
         ''')
         
-        # Calculate age for each player
+        # Calculate age for each player - FIXED VERSION
         players_with_age = []
         for player in players:
+            age = 'N/A'
             try:
-                birth_date = datetime.strptime(player['date_of_birth'], '%Y-%m-%d').date()
+                dob = player['date_of_birth']
+                if isinstance(dob, str):
+                    birth_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                else:
+                    birth_date = dob
+                    
                 today = date.today()
                 age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            except (ValueError, KeyError):
+            except:
                 age = 'N/A'
+                
             players_with_age.append((player, age))
         
         return render_template('players.html', players=players_with_age)
@@ -2044,7 +2076,27 @@ def clubs():
     conn = get_db_connection()
     try:
         clubs = fetch_all(conn, 'SELECT * FROM clubs WHERE approved = TRUE')
-        return render_template('clubs.html', clubs=clubs)
+        
+        # Format dates properly for template
+        formatted_clubs = []
+        for club in clubs:
+            club_data = dict(club)
+            
+            # Handle registration_date - convert to string if it's a datetime object
+            registration_date = club_data.get('registration_date')
+            if registration_date:
+                if hasattr(registration_date, 'strftime'):
+                    # It's a datetime/date object
+                    club_data['registration_date'] = registration_date.strftime('%Y-%m-%d')
+                else:
+                    # It's already a string, ensure it's only the date part
+                    club_data['registration_date'] = str(registration_date)[:10]
+            else:
+                club_data['registration_date'] = 'N/A'
+                
+            formatted_clubs.append(club_data)
+        
+        return render_template('clubs.html', clubs=formatted_clubs)
     except Exception as e:
         flash(f'Error loading clubs: {str(e)}', 'error')
         return redirect(url_for('index'))
