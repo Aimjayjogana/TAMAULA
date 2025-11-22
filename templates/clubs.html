@@ -24,9 +24,10 @@
              data-name="{{ club.name.lower() }}" 
              data-localgov="{{ club.local_government.lower() }}">
             <div style="text-align: center; margin-bottom: 1rem;">
-                <img src="{% if club.logo %}{{ club.logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
                      alt="{{ club.name }} Logo" 
-                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary);">
+                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary);"
+                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
             </div>
             
             <h3>{{ club.name }}</h3>

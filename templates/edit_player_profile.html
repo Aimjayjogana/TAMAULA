@@ -14,9 +14,10 @@
             <!-- Profile Picture Section -->
             <div style="text-align: center; margin-bottom: 2rem;">
                 <img id="profilePreview" 
-                     src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                     src="{{ player.profile_picture or url_for('static', filename='images/default-player.jpg') }}" 
                      alt="Profile Preview" 
-                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);"
+                     onerror="this.src='{{ url_for('static', filename='images/default-player.jpg') }}'">
                 
                 <div class="form-group" style="margin-top: 1rem;">
                     <label for="profile_picture">Change Profile Picture</label>
@@ -72,31 +73,31 @@
                 </select>
             </div>
 
-            <!-- Club Selection Section - THIS IS THE MISSING FIELD -->
+            <!-- Club Selection Section -->
             <div class="form-group">
-    <label for="club_id">Transfer to New Club</label>
-    <select id="club_id" name="club_id" class="form-control">
-        <option value="{{ player.club_id }}">Stay with {{ player.club_name }}</option>
-        {% for club in clubs %}
-        {% if club.id != player.club_id %}
-        <option value="{{ club.id }}">
-            {{ club.name }} - {{ club.local_government }}
-        </option>
-        {% endif %}
-        {% endfor %}
-    </select>
-    <small style="color: var(--gray); font-size: 0.8rem;">
-        Changing clubs requires approval from both clubs
-    </small>
-</div>
+                <label for="club_id">Transfer to New Club</label>
+                <select id="club_id" name="club_id" class="form-control">
+                    <option value="{{ player.club_id }}">Stay with {{ player.club_name }}</option>
+                    {% for club in clubs %}
+                    {% if club.id != player.club_id %}
+                    <option value="{{ club.id }}">
+                        {{ club.name }} - {{ club.local_government }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <small style="color: var(--gray); font-size: 0.8rem;">
+                    Changing clubs requires approval from both clubs
+                </small>
+            </div>
 
-<!-- Transfer Reason (shown only when changing clubs) -->
-<div id="transferSection" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
-    <div class="form-group">
-        <label for="transfer_reason">Reason for Transfer (Optional)</label>
-        <textarea id="transfer_reason" name="transfer_reason" class="form-control" rows="3" placeholder="Why do you want to transfer?"></textarea>
-    </div>
-</div>
+            <!-- Transfer Reason (shown only when changing clubs) -->
+            <div id="transferSection" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+                <div class="form-group">
+                    <label for="transfer_reason">Reason for Transfer (Optional)</label>
+                    <textarea id="transfer_reason" name="transfer_reason" class="form-control" rows="3" placeholder="Why do you want to transfer?"></textarea>
+                </div>
+            </div>
 
             <!-- Password Change Section -->
             <div style="border-top: 2px solid #e2e8f0; padding-top: 2rem; margin-top: 1rem;">

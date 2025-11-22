@@ -25,9 +25,10 @@
             <div class="card lineup-card">
                 <div class="card-header">
                     <h3>{{ club.name }}</h3>
-                    {% if club.logo %}
-                    <img src="{{ club.logo }}" alt="{{ club.name }} logo" class="club-logo">
-                    {% endif %}
+                    <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
+                         alt="{{ club.name }} logo" 
+                         class="club-logo"
+                         onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                 </div>
                 <div class="card-body">
                     {% set club_players = lineups[club.id] %}

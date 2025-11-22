@@ -124,6 +124,7 @@ def register_player():
                     return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
                 
                 # Handle profile picture upload
+                # Handle profile picture upload
                 profile_picture = None
                 if 'profile_picture' in request.files:
                     file = request.files['profile_picture']
@@ -131,14 +132,10 @@ def register_player():
                         allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
                         if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
                             filename = secure_filename(f"{username}_{file.filename}")
-                            # UPLOAD TO CLOUD STORAGE
+                            # Upload to storage
                             file_url = storage.upload_file(file, filename, 'player-profiles')
                             if file_url:
                                 profile_picture = file_url
-                            else:
-                                flash('Error uploading profile picture', 'error')
-                        else:
-                            flash('Invalid file type.', 'error')
                 
                 # Insert player into database with 'pending' status (club approval needed)
                 execute_sql(conn, '''
@@ -417,7 +414,7 @@ def edit_player_profile():
                 flash('Username or email already exists', 'error')
                 return redirect(url_for('edit_player_profile'))
             
-            # Handle profile picture upload
+            # Handle profile picture upload - FIXED: Initialize variable first
             profile_picture = None
             if 'profile_picture' in request.files:
                 file = request.files['profile_picture']
@@ -428,10 +425,6 @@ def edit_player_profile():
                         file_url = storage.upload_file(file, filename, 'player-profiles')
                         if file_url:
                             profile_picture = file_url
-                        else:
-                            flash('Error uploading profile picture', 'error')
-                    else:
-                        flash('Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WebP.', 'error')
             
             # Handle club transfer with approval system
             transfer_occurred = False
@@ -2091,10 +2084,6 @@ def register_club():
                             file_url = storage.upload_file(file, filename, 'club-logos')
                             if file_url:
                                 logo = file_url
-                            else:
-                                flash('Error uploading logo', 'error')
-                        else:
-                            flash('Invalid file type', 'error')
                 
                 # Insert club into database (initially not approved)
                 execute_sql(conn, '''

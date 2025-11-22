@@ -30,13 +30,13 @@
                     {% for club in pending_clubs %}
                     <tr>
                         <td>
-                            <strong>{{ club.name }}</strong>
-                            {% if club.logo %}
-                            <br>
-                            <img src="{{ club.logo }}" 
-                                 alt="{{ club.name }} Logo" 
-                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-top: 0.5rem;">
-                            {% endif %}
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
+                                     alt="{{ club.name }} Logo" 
+                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
+                                <strong>{{ club.name }}</strong>
+                            </div>
                         </td>
                         <td>{{ club.local_government }}</td>
                         <td>{{ club.email }}</td>
@@ -83,13 +83,13 @@
                     {% for club in approved_clubs %}
                     <tr>
                         <td>
-                            <strong>{{ club.name }}</strong>
-                            {% if club.logo %}
-                            <br>
-                            <img src="{{ club.logo }}" 
-                                 alt="{{ club.name }} Logo" 
-                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-top: 0.5rem;">
-                            {% endif %}
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
+                                     alt="{{ club.name }} Logo" 
+                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
+                                <strong>{{ club.name }}</strong>
+                            </div>
                         </td>
                         <td>{{ club.local_government }}</td>
                         <td>{{ club.email }}</td>

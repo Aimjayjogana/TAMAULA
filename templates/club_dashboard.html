@@ -6,8 +6,10 @@
 <div class="dashboard-content">
     <div class="dashboard-header">
         <div style="display: flex; align-items: center; gap: 1rem;">
-            <img src="{% if club.logo %}{{ club.logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
-                 alt="{{ club.name }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+            <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
+                 alt="{{ club.name }}" 
+                 style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"
+                 onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
             <div>
                 <h1>{{ club.name }}</h1>
                 <p>Club Dashboard - {{ club.local_government }}</p>
@@ -46,28 +48,29 @@
         </div>
 
         <div class="card">
-            <h3 >Team Management</h3> 
-             <a href="{{ url_for('club_matches') }}" class="btn" style="margin-bottom: 1rem;">View Matches</a>
+            <h3>Team Management</h3> 
+            <a href="{{ url_for('club_matches') }}" class="btn" style="margin-bottom: 1rem;">View Matches</a>
             <a href="{{ url_for('competition_registration') }}" class="btn" style="margin-bottom: 1rem;">Register for Competition</a>
             <a href="{{ url_for('manage_lineup') }}" class="btn" style="margin-bottom: 1rem;">Manage Lineup</a>
             <a href="{{ url_for('register_player') }}" class="btn">Add New Player</a>
             <a href="{{ url_for('club_player_approvals') }}" class="btn" style="margin-bottom: 1rem;">
-        Player Approvals 
-        {% if pending_count > 0 %}
-        <span style="background: var(--warning); color: white; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; margin-left: 0.5rem;">
-            {{ pending_count }}
-        </span>
-        {% endif %}
-    </a>
+                Player Approvals 
+                {% if pending_count > 0 %}
+                <span style="background: var(--warning); color: white; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; margin-left: 0.5rem;">
+                    {{ pending_count }}
+                </span>
+                {% endif %}
+            </a>
         </div>
     </div>
+    
     <div class="card">
-    <h3>Transfer Management</h3>
-    <p>Manage player transfer requests</p>
-    <a href="{{ url_for('club_transfer_requests') }}" class="btn">
-        View Transfer Requests
-    </a>
-</div>
+        <h3>Transfer Management</h3>
+        <p>Manage player transfer requests</p>
+        <a href="{{ url_for('club_transfer_requests') }}" class="btn">
+            View Transfer Requests
+        </a>
+    </div>
 
     <div class="card" style="margin-top: 2rem;">
         <h3>Player Roster</h3>
@@ -88,8 +91,10 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
-                                     alt="{{ player.fullname }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                <img src="{{ player.profile_picture or url_for('static', filename='images/default-player.jpg') }}" 
+                                     alt="{{ player.fullname }}" 
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-player.jpg') }}'">
                                 {{ player.fullname }}
                             </div>
                         </td>

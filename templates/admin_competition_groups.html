@@ -51,10 +51,10 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                {% if assignment.logo %}
-                                <img src="{{ assignment.logo }}" 
-                                     alt="{{ assignment.club_name }}" style="width: 30px; height: 30px; border-radius: 50%;">
-                                {% endif %}
+                                <img src="{{ assignment.logo or url_for('static', filename='images/default-club.png') }}" 
+                                     alt="{{ assignment.club_name }}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                                 {{ assignment.club_name }}
                             </div>
                         </td>
@@ -128,10 +128,10 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                {% if club.logo %}
-                                <img src="{{ club.logo }}" 
-                                     alt="{{ club.name }}" style="width: 30px; height: 30px; border-radius: 50%;">
-                                {% endif %}
+                                <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
+                                     alt="{{ club.name }}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                                 {{ club.name }}
                             </div>
                         </td>

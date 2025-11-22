@@ -14,9 +14,10 @@
         <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem;">
             <!-- Home Team -->
             <div>
-                <img src="{% if match.home_club_logo %}{{ match.home_club_logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                <img src="{{ match.home_club_logo or url_for('static', filename='images/default-club.png') }}" 
                      alt="{{ match.home_club_name }}" 
-                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;">
+                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;"
+                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                 <h3>{{ match.home_club_name }}</h3>
             </div>
 
@@ -40,9 +41,10 @@
 
             <!-- Away Team -->
             <div>
-                <img src="{% if match.away_club_logo %}{{ match.away_club_logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                <img src="{{ match.away_club_logo or url_for('static', filename='images/default-club.png') }}" 
                      alt="{{ match.away_club_name }}" 
-                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;">
+                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;"
+                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                 <h3>{{ match.away_club_name }}</h3>
             </div>
         </div>

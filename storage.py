@@ -28,25 +28,23 @@ class CloudinaryStorage:
     def upload_file(self, file, filename, folder='uploads'):
         if self.enabled and file:
             try:
-                # Cloudinary does everything: resize, optimize, CDN
                 result = cloudinary.uploader.upload(
                     file,
                     folder=folder,
-                    public_id=filename.rsplit('.', 1)[0],  # remove extension
+                    public_id=filename.rsplit('.', 1)[0],
                     overwrite=True,
                     resource_type="image",
-                    format="webp"  # optional: forces modern format
+                    format="webp"
                 )
-                return result['secure_url']  # e.g. https://res.cloudinary.com/.../uploads/photo123.webp
+                return result['secure_url']
             except Exception as e:
                 print(f"❌ Cloudinary upload failed: {e}")
 
-        # ───── FALLBACK TO LOCAL (same as your old code) ─────
-        upload_folder = os.path.join('static', 'uploads', folder)
+        # Fixed local storage path to match Flask configuration
+        upload_folder = os.path.join('static', 'images', 'uploads', folder)
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
-        return f"/static/uploads/{folder}/{filename}"
+        return f"/static/images/uploads/{folder}/{filename}"
 
-# Keep the same name your app expects
 storage = CloudinaryStorage()

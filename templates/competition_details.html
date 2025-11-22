@@ -62,8 +62,10 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
-                                     alt="{{ player.fullname }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                <img src="{{ player.profile_picture or url_for('static', filename='images/default-player.jpg') }}" 
+                                     alt="{{ player.fullname }}" 
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-player.jpg') }}'">
                                 {{ player.fullname }}
                             </div>
                         </td>

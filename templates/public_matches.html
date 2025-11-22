@@ -33,16 +33,18 @@
                     <td>{{ match.competition_name }}</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <img src="{% if match.home_club_logo %}{{ match.home_club_logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                            <img src="{{ match.home_club_logo or url_for('static', filename='images/default-club.png') }}" 
                                  alt="{{ match.home_club_name }}" 
-                                 style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;">
+                                 style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;"
+                                 onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                             <strong>{{ match.home_club_name }}</strong>
                         </div>
                         <div style="text-align: center; color: var(--gray); font-size: 0.8rem;">VS</div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <img src="{% if match.away_club_logo %}{{ match.away_club_logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+                            <img src="{{ match.away_club_logo or url_for('static', filename='images/default-club.png') }}" 
                                  alt="{{ match.away_club_name }}" 
-                                 style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;">
+                                 style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;"
+                                 onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                             <strong>{{ match.away_club_name }}</strong>
                         </div>
                     </td>

@@ -5,11 +5,16 @@
 {% block content %}
 <div class="dashboard-content">
     <div class="dashboard-header">
-        <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
-        alt="{{ player.fullname }}" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
-
-        <h1>Welcome, {{ player.fullname }}!</h1>
-        <p>Player Dashboard</p>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <img src="{{ player.profile_picture or url_for('static', filename='images/default-player.jpg') }}" 
+                 alt="{{ player.fullname }}" 
+                 style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;"
+                 onerror="this.src='{{ url_for('static', filename='images/default-player.jpg') }}'">
+            <div>
+                <h1>Welcome, {{ player.fullname }}!</h1>
+                <p>Player Dashboard</p>
+            </div>
+        </div>
     </div>
 
     <div class="stats-grid">
@@ -36,8 +41,10 @@
             <h3>Personal Information</h3>
             <div class="profile-info">
                 <div style="text-align: center; margin-bottom: 1rem;">
-                    <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
-                         alt="{{ player.fullname }}" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
+                    <img src="{{ player.profile_picture or url_for('static', filename='images/default-player.jpg') }}" 
+                         alt="{{ player.fullname }}" 
+                         style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;"
+                         onerror="this.src='{{ url_for('static', filename='images/default-player.jpg') }}'">
                 </div>
                 <p><strong>Full Name:</strong> {{ player.fullname }}</p>
                 <p><strong>Username:</strong> {{ player.username }}</p>
@@ -47,34 +54,33 @@
                 <p><strong>Gender:</strong> {{ player.gender if player.gender else 'N/A' }}</p>
                 <p><strong>Club:</strong> {{ player.club_name }}</p>
                 <div class="profile-info">    
-                <a href="{{ url_for('edit_player_profile') }}" class="btn" style="margin-top: 1rem;">Edit Profile</a>
-        </div>
-</div>
+                    <a href="{{ url_for('edit_player_profile') }}" class="btn" style="margin-top: 1rem;">Edit Profile</a>
+                </div>
             </div>
         </div>
+        
         {% if pending_transfers %}
-<div class="card">
-    <h3>Pending Transfers</h3>
-    {% for transfer in pending_transfers %}
-    <div style="padding: 1rem; background: #fff3cd; border-radius: 5px; margin-bottom: 1rem;">
-        <p><strong>Transfer to:</strong> {{ transfer.to_club_name }}</p>
-        <p><strong>Status:</strong> 
-            {% if transfer.status == 'pending' %}
-            <span style="color: var(--warning);">Waiting for {{ transfer.from_club_name }} approval</span>
-            {% elif transfer.status == 'approved_by_from' %}
-            <span style="color: var(--success);">Waiting for {{ transfer.to_club_name }} approval</span>
-            {% elif transfer.status == 'completed' %}
-            <span style="color: var(--success);">Transfer Completed</span>
-            {% elif transfer.status == 'rejected' %}
-            <span style="color: var(--error);">Transfer Rejected</span>
-            {% endif %}
-        </p>
-        <p><strong>Requested:</strong> {{ transfer.request_date }}</p>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
-
+        <div class="card">
+            <h3>Pending Transfers</h3>
+            {% for transfer in pending_transfers %}
+            <div style="padding: 1rem; background: #fff3cd; border-radius: 5px; margin-bottom: 1rem;">
+                <p><strong>Transfer to:</strong> {{ transfer.to_club_name }}</p>
+                <p><strong>Status:</strong> 
+                    {% if transfer.status == 'pending' %}
+                    <span style="color: var(--warning);">Waiting for {{ transfer.from_club_name }} approval</span>
+                    {% elif transfer.status == 'approved_by_from' %}
+                    <span style="color: var(--success);">Waiting for {{ transfer.to_club_name }} approval</span>
+                    {% elif transfer.status == 'completed' %}
+                    <span style="color: var(--success);">Transfer Completed</span>
+                    {% elif transfer.status == 'rejected' %}
+                    <span style="color: var(--error);">Transfer Rejected</span>
+                    {% endif %}
+                </p>
+                <p><strong>Requested:</strong> {{ transfer.request_date }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

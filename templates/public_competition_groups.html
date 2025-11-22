@@ -39,10 +39,10 @@
                         <td><strong>{{ loop.index }}</strong></td>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                {% if standing.logo %}
-                                <img src="{{ standing.logo }}" 
-                                     alt="{{ standing.club_name }}" style="width: 30px; height: 30px; border-radius: 50%;">
-                                {% endif %}
+                                <img src="{{ standing.logo or url_for('static', filename='images/default-club.png') }}" 
+                                     alt="{{ standing.club_name }}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"
+                                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                                 <strong>{{ standing.club_name }}</strong>
                             </div>
                         </td>
@@ -97,10 +97,10 @@
                     <div style="text-align: right;">
                         <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
                             <strong>{{ match.home_club_name }}</strong>
-                            {% if match.home_logo %}
-                            <img src="{{ match.home_logo }}" 
-                                 alt="{{ match.home_club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
-                            {% endif %}
+                            <img src="{{ match.home_logo or url_for('static', filename='images/default-club.png') }}" 
+                                 alt="{{ match.home_club_name }}" 
+                                 style="width: 25px; height: 25px; border-radius: 50%; object-fit: cover;"
+                                 onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                         </div>
                     </div>
                     
@@ -118,10 +118,10 @@
                     
                     <div style="text-align: left;">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            {% if match.away_logo %}
-                            <img src="{{ match.away_logo }}" 
-                                 alt="{{ match.away_club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
-                            {% endif %}
+                            <img src="{{ match.away_logo or url_for('static', filename='images/default-club.png') }}" 
+                                 alt="{{ match.away_club_name }}" 
+                                 style="width: 25px; height: 25px; border-radius: 50%; object-fit: cover;"
+                                 onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
                             <strong>{{ match.away_club_name }}</strong>
                         </div>
                     </div>
