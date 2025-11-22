@@ -14,7 +14,7 @@
             <!-- Profile Picture Section -->
             <div style="text-align: center; margin-bottom: 2rem;">
                 <img id="profilePreview" 
-                     src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                     src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
                      alt="Profile Preview" 
                      style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
                 

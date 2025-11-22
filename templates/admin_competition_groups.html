@@ -52,7 +52,7 @@
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 {% if assignment.logo %}
-                                <img src="{{ url_for('static', filename='images/uploads/' + assignment.logo) }}" 
+                                <img src="{{ assignment.logo }}" 
                                      alt="{{ assignment.club_name }}" style="width: 30px; height: 30px; border-radius: 50%;">
                                 {% endif %}
                                 {{ assignment.club_name }}
@@ -129,7 +129,7 @@
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 {% if club.logo %}
-                                <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" 
+                                <img src="{{ club.logo }}" 
                                      alt="{{ club.name }}" style="width: 30px; height: 30px; border-radius: 50%;">
                                 {% endif %}
                                 {{ club.name }}

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="dashboard-content">
     <div class="dashboard-header">
-        <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+        <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
         alt="{{ player.fullname }}" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
 
         <h1>Welcome, {{ player.fullname }}!</h1>
@@ -36,7 +36,7 @@
             <h3>Personal Information</h3>
             <div class="profile-info">
                 <div style="text-align: center; margin-bottom: 1rem;">
-                    <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                    <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
                          alt="{{ player.fullname }}" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
                 </div>
                 <p><strong>Full Name:</strong> {{ player.fullname }}</p>

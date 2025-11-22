@@ -41,7 +41,7 @@
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 {% if standing.logo %}
-                                <img src="{{ url_for('static', filename='images/uploads/' + standing.logo) }}" 
+                                <img src="{{ standing.logo }}" 
                                      alt="{{ standing.club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
                                 {% endif %}
                                 {{ standing.club_name }}
@@ -160,13 +160,13 @@
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 {% if match.home_logo %}
-                                <img src="{{ url_for('static', filename='images/uploads/' + match.home_logo) }}" 
+                                <img src="{{ match.home_logo }}" 
                                      alt="{{ match.home_club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
                                 {% endif %}
                                 {{ match.home_club_name }}
                                 <strong> vs </strong>
                                 {% if match.away_logo %}
-                                <img src="{{ url_for('static', filename='images/uploads/' + match.away_logo) }}" 
+                                <img src="{{ match.away_logo }}" 
                                      alt="{{ match.away_club_name }}" style="width: 25px; height: 25px; border-radius: 50%;">
                                 {% endif %}
                                 {{ match.away_club_name }}

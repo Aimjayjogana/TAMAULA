@@ -33,7 +33,7 @@
                             <strong>{{ club.name }}</strong>
                             {% if club.logo %}
                             <br>
-                            <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" 
+                            <img src="{{ club.logo }}" 
                                  alt="{{ club.name }} Logo" 
                                  style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-top: 0.5rem;">
                             {% endif %}
@@ -86,7 +86,7 @@
                             <strong>{{ club.name }}</strong>
                             {% if club.logo %}
                             <br>
-                            <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" 
+                            <img src="{{ club.logo }}" 
                                  alt="{{ club.name }} Logo" 
                                  style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-top: 0.5rem;">
                             {% endif %}

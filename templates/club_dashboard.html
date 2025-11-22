@@ -6,7 +6,7 @@
 <div class="dashboard-content">
     <div class="dashboard-header">
         <div style="display: flex; align-items: center; gap: 1rem;">
-            <img src="{% if club.logo %}{{ url_for('static', filename='images/uploads/' + club.logo) }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
+            <img src="{% if club.logo %}{{ club.logo }}{% else %}{{ url_for('static', filename='images/default-club.png') }}{% endif %}" 
                  alt="{{ club.name }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
             <div>
                 <h1>{{ club.name }}</h1>
@@ -88,7 +88,7 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                                <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
                                      alt="{{ player.fullname }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                                 {{ player.fullname }}
                             </div>

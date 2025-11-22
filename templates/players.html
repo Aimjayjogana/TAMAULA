@@ -26,7 +26,7 @@
              data-position="{{ player.position.lower() if player.position else '' }}"
              data-jersey="{{ player.jersey_number or '' }}">
             <div class="profile-image-container">
-                <img src="{% if player.profile_picture %}{{ url_for('static', filename='images/uploads/' + player.profile_picture) }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
+                <img src="{% if player.profile_picture %}{{ player.profile_picture }}{% else %}{{ url_for('static', filename='images/default-player.jpg') }}{% endif %}" 
                      alt="{{ player.fullname }}" class="profile-image">
                 <div class="jersey-badge">#{{ player.jersey_number if player.jersey_number else 'N/A' }}</div>
             </div>

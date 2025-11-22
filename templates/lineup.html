@@ -26,7 +26,7 @@
                 <div class="card-header">
                     <h3>{{ club.name }}</h3>
                     {% if club.logo %}
-                    <img src="{{ url_for('static', filename='images/uploads/' + club.logo) }}" alt="{{ club.name }} logo" class="club-logo">
+                    <img src="{{ club.logo }}" alt="{{ club.name }} logo" class="club-logo">
                     {% endif %}
                 </div>
                 <div class="card-body">
