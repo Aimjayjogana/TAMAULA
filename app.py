@@ -88,6 +88,26 @@ def initialize():
 def index():
     return render_template('index.html')
 
+# Serve player profile pictures
+@app.route('/static/images/uploads/player-profiles/<path:filename>')
+def serve_player_profiles(filename):
+    return send_from_directory('static/images/uploads/player-profiles', filename)
+
+@app.route('/fix_player_images')
+def fix_player_images():
+    """Reset all player images to use default"""
+    conn = get_db_connection()
+    try:
+        execute_sql(conn, "UPDATE players SET profile_picture = NULL")
+        conn.commit()
+        flash('Player images fixed. Please re-upload profile pictures.', 'success')
+        return redirect(url_for('players'))
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('players'))
+    finally:
+        conn.close()
+
 @app.route('/register_player', methods=['GET', 'POST'])
 def register_player():
     if request.method == 'POST':

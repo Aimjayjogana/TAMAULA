@@ -40,11 +40,14 @@ class CloudinaryStorage:
             except Exception as e:
                 print(f"❌ Cloudinary upload failed: {e}")
 
-        # Fixed local storage path to match Flask configuration
+        # FIXED: Consistent path for all uploads
         upload_folder = os.path.join('static', 'images', 'uploads', folder)
         os.makedirs(upload_folder, exist_ok=True)
+        
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
+        
+        # Return consistent URL path
         return f"/static/images/uploads/{folder}/{filename}"
 
 storage = CloudinaryStorage()
