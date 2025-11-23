@@ -41,7 +41,13 @@
                         <td>{{ club.local_government }}</td>
                         <td>{{ club.email }}</td>
                         <td>{{ club.phone or 'N/A' }}</td>
-                        <td>{{ club.registration_date.strftime('%Y-%m-%d') if club.registration_date else 'N/A' }}</td>
+                        <td>
+                            {% if club.registration_date %}
+                                {{ club.registration_date[:10] }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
                         <td>
                             <button class="btn approve-club" data-club-id="{{ club.id }}" 
                                     style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;">

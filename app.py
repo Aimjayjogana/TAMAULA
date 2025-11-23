@@ -1232,6 +1232,8 @@ def admin_pending_clubs():
     
     conn = get_db_connection()
     try:
+        print("🔄 Loading pending clubs...")
+        
         # Get pending clubs
         pending_clubs_result = fetch_all(conn, '''
             SELECT id, name, local_government, email, phone, logo, registration_date 
@@ -1244,31 +1246,37 @@ def admin_pending_clubs():
             FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
         ''')
         
-        # Format dates as simple strings
+        # Format dates for both lists
         def format_club_dates(clubs_list):
             formatted = []
             for club in clubs_list:
                 club_data = dict(club)
                 registration_date = club_data.get('registration_date')
-                
-                # Convert to string and take first 10 characters (YYYY-MM-DD)
                 if registration_date:
-                    club_data['registration_date'] = str(registration_date)[:10]
+                    if hasattr(registration_date, 'strftime'):
+                        club_data['registration_date'] = registration_date.strftime('%Y-%m-%d')
+                    else:
+                        club_data['registration_date'] = str(registration_date)[:10]
                 else:
                     club_data['registration_date'] = 'N/A'
-                    
                 formatted.append(club_data)
             return formatted
         
         pending_clubs = format_club_dates(pending_clubs_result)
         approved_clubs = format_club_dates(approved_clubs_result)
         
+        print(f"✅ Found {len(pending_clubs)} pending clubs and {len(approved_clubs)} approved clubs")
+        
         return render_template('admin_pending_clubs.html', 
                              pending_clubs=pending_clubs,
                              approved_clubs=approved_clubs)
         
     except Exception as e:
-        flash(f'Error loading pending clubs: {str(e)}', 'error')
+        error_msg = f'Error loading pending clubs: {str(e)}'
+        flash(error_msg, 'error')
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
         return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
