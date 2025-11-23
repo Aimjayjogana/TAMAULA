@@ -26,41 +26,36 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
+                
                 <tbody>
-                    {% for club in pending_clubs %}
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
-                                     alt="{{ club.name }} Logo" 
-                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;"
-                                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
-                                <strong>{{ club.name }}</strong>
-                            </div>
-                        </td>
-                        <td>{{ club.local_government }}</td>
-                        <td>{{ club.email }}</td>
-                        <td>{{ club.phone or 'N/A' }}</td>
-                        <td>
-                            {% if club.registration_date %}
-                                {{ club.registration_date[:10] }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn approve-club" data-club-id="{{ club.id }}" 
-                                    style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
-                                Approve
-                            </button>
-                            <button class="btn reject-club" data-club-id="{{ club.id }}" 
-                                    style="background: var(--error); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
-                                Reject
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+    {% for club in approved_clubs %}
+    <tr>
+        <td>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="{{ club.logo or url_for('static', filename='images/default-club.png') }}" 
+                     alt="{{ club.name }} Logo" 
+                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;"
+                     onerror="this.src='{{ url_for('static', filename='images/default-club.png') }}'">
+                <strong>{{ club.name }}</strong>
+            </div>
+        </td>
+        <td>{{ club.local_government }}</td>
+        <td>{{ club.email }}</td>
+        <td>{{ club.phone or 'N/A' }}</td>
+        <td>
+            {% if club.registration_date %}
+                {{ club.registration_date[:10] }}
+            {% else %}
+                N/A
+            {% endif %}
+        </td>
+        <td>
+            <span style="color: var(--success); font-weight: 500;">Approved</span>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+
             </table>
         </div>
         {% else %}
