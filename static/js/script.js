@@ -17,7 +17,7 @@ function initializeCompetitionForm() {
 
             if (regDeadline > startDate) {
                 e.preventDefault();
-                alert('Registrationdeadline must be before start date.');
+                alert('Registration deadline must be before start date.');
                 return;
             }
 
@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
- initializeMatchEvents();
+// REMOVED: initializeMatchEvents(); // This was causing the error
+
 // Club dropdown functionality
 const localGovSelect = document.getElementById('local_government');
 const clubSelect = document.getElementById('club');
