@@ -1246,24 +1246,9 @@ def admin_pending_clubs():
             FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
         ''')
         
-        # Format dates for both lists
-        def format_club_dates(clubs_list):
-            formatted = []
-            for club in clubs_list:
-                club_data = dict(club)
-                registration_date = club_data.get('registration_date')
-                if registration_date:
-                    if hasattr(registration_date, 'strftime'):
-                        club_data['registration_date'] = registration_date.strftime('%Y-%m-%d')
-                    else:
-                        club_data['registration_date'] = str(registration_date)[:10]
-                else:
-                    club_data['registration_date'] = 'N/A'
-                formatted.append(club_data)
-            return formatted
-        
-        pending_clubs = format_club_dates(pending_clubs_result)
-        approved_clubs = format_club_dates(approved_clubs_result)
+        # SIMPLE FIX: Don't format dates at all, let template handle them
+        pending_clubs = [dict(club) for club in pending_clubs_result]
+        approved_clubs = [dict(club) for club in approved_clubs_result]
         
         print(f"✅ Found {len(pending_clubs)} pending clubs and {len(approved_clubs)} approved clubs")
         
