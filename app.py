@@ -93,6 +93,11 @@ def index():
 def serve_player_profiles(filename):
     return send_from_directory('static/images/uploads/', filename)
 
+# This serves all other uploads
+@app.route('/static/images/uploads/<path:filename>')
+def serve_uploaded_files(filename):
+    return send_from_directory('static/images/uploads', filename)
+
 @app.route('/fix_upload_paths')
 def fix_upload_paths():
     """Fix player image paths to use consistent structure"""
@@ -1227,8 +1232,6 @@ def admin_pending_clubs():
     
     conn = get_db_connection()
     try:
-        print("🔄 Loading pending clubs...")
-        
         # Get pending clubs
         pending_clubs_result = fetch_all(conn, '''
             SELECT id, name, local_government, email, phone, logo, registration_date 
@@ -1241,37 +1244,36 @@ def admin_pending_clubs():
             FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
         ''')
         
-        # Format dates for both lists
+        # Format dates properly for both lists
         def format_club_dates(clubs_list):
             formatted = []
             for club in clubs_list:
                 club_data = dict(club)
                 registration_date = club_data.get('registration_date')
+                
+                # Handle date formatting safely
                 if registration_date:
                     if hasattr(registration_date, 'strftime'):
+                        # It's a datetime object
                         club_data['registration_date'] = registration_date.strftime('%Y-%m-%d')
                     else:
-                        club_data['registration_date'] = str(registration_date)[:10]
+                        # It's already a string, use as-is or format if needed
+                        club_data['registration_date'] = str(registration_date)[:10]  # Get just the date part
                 else:
                     club_data['registration_date'] = 'N/A'
+                    
                 formatted.append(club_data)
             return formatted
         
         pending_clubs = format_club_dates(pending_clubs_result)
         approved_clubs = format_club_dates(approved_clubs_result)
         
-        print(f"✅ Found {len(pending_clubs)} pending clubs and {len(approved_clubs)} approved clubs")
-        
         return render_template('admin_pending_clubs.html', 
                              pending_clubs=pending_clubs,
                              approved_clubs=approved_clubs)
         
     except Exception as e:
-        error_msg = f'Error loading pending clubs: {str(e)}'
-        flash(error_msg, 'error')
-        print(f"❌ {error_msg}")
-        import traceback
-        traceback.print_exc()
+        flash(f'Error loading pending clubs: {str(e)}', 'error')
         return redirect(url_for('admin_dashboard'))
     finally:
         conn.close()
