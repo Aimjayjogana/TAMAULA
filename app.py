@@ -1244,21 +1244,16 @@ def admin_pending_clubs():
             FROM clubs WHERE approved = TRUE ORDER BY registration_date DESC
         ''')
         
-        # Format dates properly for both lists
+        # Format dates as simple strings
         def format_club_dates(clubs_list):
             formatted = []
             for club in clubs_list:
                 club_data = dict(club)
                 registration_date = club_data.get('registration_date')
                 
-                # Handle date formatting safely
+                # Convert to string and take first 10 characters (YYYY-MM-DD)
                 if registration_date:
-                    if hasattr(registration_date, 'strftime'):
-                        # It's a datetime object
-                        club_data['registration_date'] = registration_date.strftime('%Y-%m-%d')
-                    else:
-                        # It's already a string, use as-is or format if needed
-                        club_data['registration_date'] = str(registration_date)[:10]  # Get just the date part
+                    club_data['registration_date'] = str(registration_date)[:10]
                 else:
                     club_data['registration_date'] = 'N/A'
                     
