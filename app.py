@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
 from database import get_db_connection, init_db
 from database import execute_sql, fetch_one, fetch_all
 from datetime import datetime, date
@@ -89,9 +89,35 @@ def index():
     return render_template('index.html')
 
 # Serve player profile pictures
-@app.route('/static/images/uploads/player-profiles/<path:filename>')
+@app.route('/static/images/uploads/<path:filename>')
 def serve_player_profiles(filename):
-    return send_from_directory('static/images/uploads/player-profiles', filename)
+    return send_from_directory('static/images/uploads/', filename)
+
+@app.route('/fix_upload_paths')
+def fix_upload_paths():
+    """Fix player image paths to use consistent structure"""
+    conn = get_db_connection()
+    try:
+        # Update player profile picture paths
+        players = fetch_all(conn, "SELECT id, profile_picture FROM players WHERE profile_picture IS NOT NULL")
+        
+        for player in players:
+            old_path = player['profile_picture']
+            if old_path and 'uploads/player-profiles' in old_path:
+                # Extract filename and create new path
+                filename = old_path.split('/')[-1]
+                new_path = f"/static/images/uploads/player-profiles/{filename}"
+                execute_sql(conn, "UPDATE players SET profile_picture = ? WHERE id = ?", (new_path, player['id']))
+        
+        conn.commit()
+        flash('Upload paths fixed successfully', 'success')
+        return redirect(url_for('players'))
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('players'))
+    finally:
+        conn.close()
 
 @app.route('/fix_player_images')
 def fix_player_images():
