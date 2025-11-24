@@ -2103,24 +2103,7 @@ def public_match_details(match_id):
     finally:
         conn.close()
 
-@app.route('/get_lineup/<int:competition_id>')
-def get_lineup(competition_id):
-    if 'user_id' not in session or session['user_type'] != 'club':
-        return jsonify({})
-    
-    conn = get_db_connection()
-    try:
-        lineup = fetch_all(conn, '''
-            SELECT player_id, position 
-            FROM lineups 
-            WHERE club_id = ? AND competition_id = ?
-        ''', (session['user_id'], competition_id))
-        
-        lineup_dict = {str(player['player_id']): player['position'] for player in lineup}
-        return jsonify(lineup_dict)
-    
-    finally:
-        conn.close()
+
 
 @app.route('/get_lineup/<int:competition_id>')
 def get_lineup(competition_id):
