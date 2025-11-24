@@ -9,54 +9,57 @@
         <p>Welcome, {{ session.admin_username }}! Manage competition registrations and system settings.</p>
     </div>
 
-<div class="card">
-    <h3>Competition Groups</h3>
-    <p>Manage group stages for competitions</p>
-    {% for comp in active_competitions %}
-    <div style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
-        <strong>{{ comp.name }}</strong>
-        <div style="margin-top: 0.5rem;">
-            <a href="{{ url_for('admin_competition_groups', competition_id=comp.id) }}" class="btn" style="margin-right: 0.5rem;">
-                Manage Groups
+    <!-- Competition Groups Section -->
+    <div class="card">
+        <h3>Competition Groups</h3>
+        <p>Manage group stages for competitions</p>
+        {% for comp in active_competitions %}
+        <div style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+            <strong>{{ comp.name }}</strong>
+            <div style="margin-top: 0.5rem;">
+                <a href="{{ url_for('admin_competition_groups', competition_id=comp.id) }}" class="btn" style="margin-right: 0.5rem;">
+                    Manage Groups
+                </a>
+                <a href="{{ url_for('admin_group_matches', competition_id=comp.id) }}" class="btn">
+                    Group Matches
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Management Quick Links -->
+    <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+        <h4>Competition Management</h4>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{{ url_for('admin_create_competition') }}" class="btn" style="background: var(--success);">
+                Create New Competition
             </a>
-            <a href="{{ url_for('admin_group_matches', competition_id=comp.id) }}" class="btn">
-                Group Matches
+            <a href="{{ url_for('competitions') }}" class="btn" style="background: var(--primary);">
+                View All Competitions
             </a>
         </div>
     </div>
-    {% endfor %}
-</div>
+
+    <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+        <h4>Club Management</h4>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{{ url_for('admin_pending_clubs') }}" class="btn" style="background: var(--warning);">
+                Review Club Registrations
+            </a>
+            <a href="{{ url_for('clubs') }}" class="btn" style="background: var(--primary);">
+                View All Clubs
+            </a>
+        </div>
+    </div>
 
     <!-- Statistics -->
-
-     <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
-    <h4>Competition Management</h4>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <a href="{{ url_for('admin_create_competition') }}" class="btn" style="background: var(--success);">
-            Create New Competition
-        </a>
-        <a href="{{ url_for('competitions') }}" class="btn" style="background: var(--primary);">
-            View All Competitions
-        </a>
-    </div>
-</div>
-<div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
-    <h4>Club Management</h4>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <a href="{{ url_for('admin_pending_clubs') }}" class="btn" style="background: var(--warning);">
-            Review Club Registrations
-        </a>
-        <a href="{{ url_for('clubs') }}" class="btn" style="background: var(--primary);">
-            View All Clubs
-        </a>
-    </div>
-</div>
     <div class="stats-grid">
         <div class="card">
-    <h3>Match Management</h3>
-    <p>Create matches and manage scores</p>
-    <a href="{{ url_for('admin_matches') }}" class="btn">Manage Matches</a>
-    </div>
+            <h3>Match Management</h3>
+            <p>Create matches and manage scores</p>
+            <a href="{{ url_for('admin_matches') }}" class="btn">Manage Matches</a>
+        </div>
 
         <div class="stat-card">
             <div class="value">{{ stats.total_clubs }}</div>
@@ -74,6 +77,83 @@
             <div class="value">{{ stats.pending_registrations }}</div>
             <div class="label">Pending Approvals</div>
         </div>
+    </div>
+
+    <!-- Club Management Section -->
+    <div class="card" style="margin-top: 2rem;">
+        <h3>Club Management ({{ all_clubs|length }} clubs)</h3>
+        <p>Manage all registered clubs in the system. Use with caution - deletion is permanent!</p>
+        
+        {% if all_clubs %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Club Name</th>
+                        <th>Local Government</th>
+                        <th>Email</th>
+                        <th>Players</th>
+                        <th>Status</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for club in all_clubs %}
+                    <tr>
+                        <td>
+                            <strong>{{ club.name }}</strong>
+                            {% if club.logo %}
+                            <br><small style="color: var(--success);">✓ Has logo</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ club.local_government }}</td>
+                        <td>{{ club.email }}</td>
+                        <td>{{ club.player_count or 0 }}</td>
+                        <td>
+                            {% if club.approved %}
+                                <span style="color: var(--success); font-weight: bold;">APPROVED</span>
+                            {% else %}
+                                <span style="color: var(--warning); font-weight: bold;">PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ club.registration_date[:10] if club.registration_date else 'N/A' }}</td>
+                        <td>
+                            <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                                <form action="{{ url_for('admin_delete_club', club_id=club.id) }}" method="POST" 
+                                      style="display: inline;"
+                                      onsubmit="return confirm('⚠️ WARNING: This will permanently delete {{ club.name }} and ALL associated players, lineups, and registrations. This action cannot be undone!');">
+                                    <button type="submit" class="btn" style="background: var(--error); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                        Delete
+                                    </button>
+                                </form>
+                                {% if club.approved %}
+                                <form action="{{ url_for('admin_deactivate_club', club_id=club.id) }}" method="POST" 
+                                      style="display: inline;"
+                                      onsubmit="return confirm('Deactivate {{ club.name }}? They will no longer appear in public views.');">
+                                    <button type="submit" class="btn" style="background: var(--warning); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                        Deactivate
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('admin_activate_club', club_id=club.id) }}" method="POST" 
+                                      style="display: inline;"
+                                      onsubmit="return confirm('Activate {{ club.name }}? They will appear in public views.');">
+                                    <button type="submit" class="btn" style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                        Activate
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No clubs registered in the system.</p>
+        {% endif %}
     </div>
 
     <!-- Pending Registrations -->
@@ -197,7 +277,6 @@
     </div>
 </div>
 
-
 <!-- Approval Modal -->
 <div id="approvalModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
     <div style="background: white; padding: 2rem; border-radius: 10px; width: 400px;">
@@ -265,8 +344,8 @@ document.getElementById('approvalForm').addEventListener('submit', function(e) {
     
     // FIXED: Use absolute URLs to avoid path issues
     const url = action === 'approve' 
-        ? '{{ url_for('approve_registration', registration_id=0) }}' .replace('0', registrationId)
-        : '{{ url_for('reject_registration', registration_id=0) }}' .replace('0', registrationId);
+        ? '{{ url_for('approve_registration', registration_id=0) }}'.replace('0', registrationId)
+        : '{{ url_for('reject_registration', registration_id=0) }}'.replace('0', registrationId);
     
     console.log('Making request to:', url);
     
@@ -281,7 +360,7 @@ document.getElementById('approvalForm').addEventListener('submit', function(e) {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'notes=${encodeURIComponent(notes)}'
+        body: 'notes=' + encodeURIComponent(notes)
     })
     .then(response => {
         console.log('Response status:', response.status);

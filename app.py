@@ -939,6 +939,18 @@ def admin_dashboard():
             ORDER BY name
         ''')
         
+        # ADDED: Get all clubs for management
+        all_clubs = fetch_all(conn, '''
+            SELECT c.*, 
+                   COUNT(p.id) as player_count,
+                   COUNT(cr.id) as competition_count
+            FROM clubs c
+            LEFT JOIN players p ON c.id = p.club_id AND p.status = 'approved'
+            LEFT JOIN competition_registrations cr ON c.id = cr.club_id
+            GROUP BY c.id
+            ORDER BY c.approved DESC, c.name
+        ''')
+        
         # Statistics - FIXED: Properly handle count results
         total_clubs_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM clubs')
         total_players_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM players')
@@ -957,7 +969,8 @@ def admin_dashboard():
                              approved_registrations=approved_registrations,
                              rejected_registrations=rejected_registrations,
                              stats=stats,
-                             active_competitions=active_competitions)
+                             active_competitions=active_competitions,
+                             all_clubs=all_clubs)  # ADDED this parameter
     except Exception as e:
         flash(f'Error loading admin dashboard: {str(e)}', 'error')
         import traceback
@@ -965,6 +978,116 @@ def admin_dashboard():
         return redirect(url_for('admin_login'))
     finally:
         conn.close()
+
+# ADD THESE ROUTES FOR CLUB MANAGEMENT:
+
+@app.route('/admin/delete_club/<int:club_id>', methods=['POST'])
+def admin_delete_club(club_id):
+    if not check_admin_session():
+        flash('Please login as admin to access this page.', 'error')
+        return redirect(url_for('admin_login'))
+    
+    conn = get_db_connection()
+    try:
+        # First, get club info for confirmation message
+        club = fetch_one(conn, 'SELECT name FROM clubs WHERE id = ?', (club_id,))
+        
+        if not club:
+            flash('Club not found.', 'error')
+            return redirect(url_for('admin_dashboard'))
+        
+        club_name = club['name']
+        
+        # Delete related records first (to maintain referential integrity)
+        # Delete player records
+        execute_sql(conn, 'DELETE FROM players WHERE club_id = ?', (club_id,))
+        
+        # Delete competition registrations
+        execute_sql(conn, 'DELETE FROM competition_registrations WHERE club_id = ?', (club_id,))
+        
+        # Delete lineup records
+        execute_sql(conn, 'DELETE FROM lineups WHERE club_id = ?', (club_id,))
+        
+        # Delete transfer requests where club is involved
+        execute_sql(conn, 'DELETE FROM transfer_requests WHERE from_club_id = ? OR to_club_id = ?', 
+                   (club_id, club_id))
+        
+        # Delete group assignments
+        execute_sql(conn, 'DELETE FROM group_assignments WHERE club_id = ?', (club_id,))
+        
+        # Delete group standings
+        execute_sql(conn, 'DELETE FROM group_standings WHERE club_id = ?', (club_id,))
+        
+        # Finally delete the club
+        execute_sql(conn, 'DELETE FROM clubs WHERE id = ?', (club_id,))
+        
+        conn.commit()
+        flash(f'Club "{club_name}" and all associated data have been deleted successfully.', 'success')
+        
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error deleting club: {str(e)}', 'error')
+        print(f"Delete club error: {e}")
+    finally:
+        conn.close()
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/deactivate_club/<int:club_id>', methods=['POST'])
+def admin_deactivate_club(club_id):
+    if not check_admin_session():
+        flash('Please login as admin to access this page.', 'error')
+        return redirect(url_for('admin_login'))
+    
+    conn = get_db_connection()
+    try:
+        club = fetch_one(conn, 'SELECT name FROM clubs WHERE id = ?', (club_id,))
+        
+        if not club:
+            flash('Club not found.', 'error')
+            return redirect(url_for('admin_dashboard'))
+        
+        # Soft delete - set approved to False
+        execute_sql(conn, 'UPDATE clubs SET approved = FALSE WHERE id = ?', (club_id,))
+        
+        conn.commit()
+        flash(f'Club "{club["name"]}" has been deactivated.', 'success')
+        
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error deactivating club: {str(e)}', 'error')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/activate_club/<int:club_id>', methods=['POST'])
+def admin_activate_club(club_id):
+    if not check_admin_session():
+        flash('Please login as admin to access this page.', 'error')
+        return redirect(url_for('admin_login'))
+    
+    conn = get_db_connection()
+    try:
+        club = fetch_one(conn, 'SELECT name FROM clubs WHERE id = ?', (club_id,))
+        
+        if not club:
+            flash('Club not found.', 'error')
+            return redirect(url_for('admin_dashboard'))
+        
+        # Activate club - set approved to True
+        execute_sql(conn, 'UPDATE clubs SET approved = TRUE WHERE id = ?', (club_id,))
+        
+        conn.commit()
+        flash(f'Club "{club["name"]}" has been activated.', 'success')
+        
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error activating club: {str(e)}', 'error')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/matches')
 def admin_matches():
