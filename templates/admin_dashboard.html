@@ -117,7 +117,7 @@
                                 <span style="color: var(--warning); font-weight: bold;">PENDING</span>
                             {% endif %}
                         </td>
-                        <td>{{ club.registration_date[:10] if club.registration_date else 'N/A' }}</td>
+                        <td>{{ club.registration_date }}</td>
                         <td>
                             <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
                                 <form action="{{ url_for('admin_delete_club', club_id=club.id) }}" method="POST" 

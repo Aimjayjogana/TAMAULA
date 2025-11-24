@@ -939,8 +939,8 @@ def admin_dashboard():
             ORDER BY name
         ''')
         
-        # ADDED: Get all clubs for management
-        all_clubs = fetch_all(conn, '''
+        # Get all clubs for management - FIXED: Format dates properly
+        clubs_data = fetch_all(conn, '''
             SELECT c.*, 
                    COUNT(p.id) as player_count,
                    COUNT(cr.id) as competition_count
@@ -950,6 +950,23 @@ def admin_dashboard():
             GROUP BY c.id
             ORDER BY c.approved DESC, c.name
         ''')
+        
+        # Format club dates properly to avoid subscriptable error
+        formatted_clubs = []
+        for club in clubs_data:
+            club_dict = dict(club)
+            # Handle registration_date formatting
+            registration_date = club_dict.get('registration_date')
+            if registration_date:
+                if hasattr(registration_date, 'strftime'):
+                    # It's a datetime/date object
+                    club_dict['registration_date'] = registration_date.strftime('%Y-%m-%d')
+                else:
+                    # It's already a string, ensure it's only the date part
+                    club_dict['registration_date'] = str(registration_date)[:10]
+            else:
+                club_dict['registration_date'] = 'N/A'
+            formatted_clubs.append(club_dict)
         
         # Statistics - FIXED: Properly handle count results
         total_clubs_result = fetch_one(conn, 'SELECT COUNT(*) as count FROM clubs')
@@ -970,7 +987,7 @@ def admin_dashboard():
                              rejected_registrations=rejected_registrations,
                              stats=stats,
                              active_competitions=active_competitions,
-                             all_clubs=all_clubs)  # ADDED this parameter
+                             all_clubs=formatted_clubs)  # Use formatted_clubs instead of raw data
     except Exception as e:
         flash(f'Error loading admin dashboard: {str(e)}', 'error')
         import traceback
