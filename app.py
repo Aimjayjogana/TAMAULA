@@ -143,17 +143,64 @@ def fix_player_images():
 def register_player():
     if request.method == 'POST':
         try:
-            fullname = request.form['fullname']
-            username = request.form['username']
-            email = request.form['email']
-            phone = request.form['phone']
-            date_of_birth = request.form['date_of_birth']
-            jersey_number = request.form['jersey_number']
-            gender = request.form['gender']
-            local_government = request.form['local_government']
-            club_name = request.form['club']
-            password = request.form['password']
+            # Get form data
+            fullname = request.form.get('fullname', '').strip()
+            username = request.form.get('username', '').strip()
+            email = request.form.get('email', '').strip()
+            phone = request.form.get('phone', '').strip()
+            date_of_birth = request.form.get('date_of_birth', '').strip()
+            jersey_number = request.form.get('jersey_number', '').strip()
+            gender = request.form.get('gender', '').strip()
+            local_government = request.form.get('local_government', '').strip()
+            club_name = request.form.get('club', '').strip()
+            password = request.form.get('password', '').strip()
+
+            # Server-side validation for required fields
+            required_fields = {
+                'fullname': fullname,
+                'username': username,
+                'email': email,
+                'date_of_birth': date_of_birth,
+                'local_government': local_government,
+                'club': club_name,
+                'password': password
+            }
             
+            # Check for empty required fields
+            missing_fields = []
+            for field_name, field_value in required_fields.items():
+                if not field_value:
+                    missing_fields.append(field_name.replace('_', ' ').title())
+            
+            if missing_fields:
+                flash(f'Please fill in all required fields: {", ".join(missing_fields)}', 'error')
+                return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+
+            # Validate email format
+            import re
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                flash('Please enter a valid email address.', 'error')
+                return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+
+            # Validate date format and age (optional but recommended)
+            from datetime import datetime, date
+            try:
+                birth_date = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+                today = date.today()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                if age < 5:  # Minimum age check
+                    flash('You must be at least 5 years old to register.', 'error')
+                    return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+            except ValueError:
+                flash('Please enter a valid date of birth.', 'error')
+                return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+
+            # Validate password length
+            if len(password) < 6:
+                flash('Password must be at least 6 characters long.', 'error')
+                return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
+
             conn = get_db_connection()
             try:
                 # Check if club exists
@@ -175,7 +222,6 @@ def register_player():
                     return render_template('register_player.html', local_governments=LOCAL_GOVERNMENTS)
                 
                 # Handle profile picture upload
-                # Handle profile picture upload
                 profile_picture = None
                 if 'profile_picture' in request.files:
                     file = request.files['profile_picture']
@@ -187,6 +233,11 @@ def register_player():
                             file_url = storage.upload_file(file, filename, 'player-profiles')
                             if file_url:
                                 profile_picture = file_url
+                
+                # Convert empty optional fields to None for database
+                phone = phone if phone else None
+                jersey_number = int(jersey_number) if jersey_number else None
+                gender = gender if gender else None
                 
                 # Insert player into database with 'pending' status (club approval needed)
                 execute_sql(conn, '''
