@@ -10,14 +10,14 @@ class CloudinaryStorage:
 
     def init_app(self, app):
         # Only activate Cloudinary if all credentials are present
-        if (os.getenv('CLOUDINARY_CLOUD_NAME') and 
-            os.getenv('CLOUDINARY_API_KEY') and 
-            os.getenv('CLOUDINARY_API_SECRET')):
+        if (os.getenv('tamaula-photos') and 
+            os.getenv('181853534191746') and 
+            os.getenv('TAchVYlNJdWkhQMqqsQ7UEXFTCM')):
             
             cloudinary.config(
-                cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
-                api_key=os.getenv('CLOUDINARY_API_KEY'),
-                api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+                cloud_name=os.getenv('tamaula-photos'),
+                api_key=os.getenv('181853534191746'),
+                api_secret=os.getenv('TAchVYlNJdWkhQMqqsQ7UEXFTCM'),
                 secure=True
             )
             self.enabled = True
