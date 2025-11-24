@@ -2122,6 +2122,25 @@ def get_lineup(competition_id):
     finally:
         conn.close()
 
+@app.route('/get_lineup/<int:competition_id>')
+def get_lineup(competition_id):
+    if 'user_id' not in session or session['user_type'] != 'club':
+        return jsonify({})
+    
+    conn = get_db_connection()
+    try:
+        lineup = fetch_all(conn, '''
+            SELECT player_id, position 
+            FROM lineups 
+            WHERE club_id = ? AND competition_id = ?
+        ''', (session['user_id'], competition_id))
+        
+        lineup_dict = {str(player['player_id']): player['position'] for player in lineup}
+        return jsonify(lineup_dict)
+    
+    finally:
+        conn.close()
+
 @app.route('/players')
 def players():
     conn = get_db_connection()
@@ -2130,6 +2149,7 @@ def players():
             SELECT p.*, c.name as club_name 
             FROM players p 
             JOIN clubs c ON p.club_id = c.id 
+            WHERE p.status = 'approved'  -- Only club-approved players
             ORDER BY p.goals DESC, p.assists DESC
         ''')
         
@@ -2429,17 +2449,16 @@ def lineup():
             ORDER BY c.name
         ''', (competition_id,))
         
-        # Debug: Check what clubs we found
-        print(f"Found {len(clubs)} clubs for competition {competition_id}")
-        
-        # Get lineups for each club
+        # Get lineups for each club - ONLY APPROVED PLAYERS
         lineups_data = {}
         for club in clubs:
             players = fetch_all(conn, '''
                 SELECT p.id, p.fullname, p.jersey_number, l.position
                 FROM players p
                 JOIN lineups l ON p.id = l.player_id
-                WHERE l.club_id = ? AND l.competition_id = ?
+                WHERE l.club_id = ? 
+                  AND l.competition_id = ?
+                  AND p.status = 'approved'  -- Only club-approved players
                 ORDER BY 
                     CASE l.position
                         WHEN 'Goalkeeper' THEN 1
@@ -2453,17 +2472,14 @@ def lineup():
             ''', (club['id'], competition_id))
             
             lineups_data[club['id']] = players
-            print(f"Club {club['name']} has {len(players)} players in lineup")
         
         return render_template('lineup.html', 
                              clubs=clubs, 
                              lineups=lineups_data,
                              competitions=competitions,
                              current_competition_id=competition_id)
-    
     except Exception as e:
-        print(f"Error in lineup route: {e}")
-        flash('Error loading lineups', 'error')
+        flash(f'Error loading lineup: {str(e)}', 'error')
         return redirect(url_for('index'))
     finally:
         conn.close()
