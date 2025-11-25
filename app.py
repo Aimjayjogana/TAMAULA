@@ -2333,6 +2333,29 @@ def clubs():
     finally:
         conn.close()
 
+@app.route('/test-upload')
+def test_upload():
+    """Test if Cloudinary uploads work"""
+    try:
+        # Create a simple test image
+        from io import BytesIO
+        import base64
+        
+        # Create a simple PNG image in memory
+        test_image_data = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+        test_image = BytesIO(test_image_data)
+        
+        # Try upload
+        result = storage.upload_file(test_image, "test_file.jpg", "test-folder")
+        
+        if result:
+            return f"✅ SUCCESS! Image uploaded to: <a href='{result}' target='_blank'>{result}</a>"
+        else:
+            return "❌ FAILED: Cloudinary upload returned None"
+            
+    except Exception as e:
+        return f"❌ ERROR: {str(e)}"
+
 @app.route('/register_club', methods=['GET', 'POST'])
 def register_club():
     if request.method == 'POST':
