@@ -546,7 +546,7 @@ def create_postgresql_database():
         # Insert default admin user (PostgreSQL version)
         cursor.execute('''
             INSERT INTO admins (username, password, email)
-            VALUES ('admin', 'admin123', 'admin@tamaula.com')
+            VALUES ('admin', 'Tama1234?', 'admin@tamaula.com')
             ON CONFLICT (username) DO NOTHING
         ''')
         
