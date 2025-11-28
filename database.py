@@ -65,7 +65,7 @@ def execute_sql(conn, sql, params=None):
         if params is None:
             cursor.execute(sql)
         else:
-            # Convert parameters to tuple if they're not already
+            # Ensure params is properly formatted
             if not isinstance(params, (tuple, list)):
                 params = (params,)
             cursor.execute(sql, params)
@@ -84,9 +84,10 @@ def fetch_one(conn, sql, params=None):
     cursor.close()
     
     if result:
+        # For both databases, convert to regular dictionary
         if get_db_config() == 'postgresql':
-            # PostgreSQL with RealDictCursor already returns dict-like objects
-            return dict(result)
+            # PostgreSQL: result is already a dict-like object from RealDictCursor
+            return {key: result[key] for key in result.keys()}
         else:
             # SQLite - convert Row to dict
             return dict(result)
@@ -99,12 +100,16 @@ def fetch_all(conn, sql, params=None):
     cursor.close()
     
     if results:
-        if get_db_config() == 'postgresql':
-            # PostgreSQL with RealDictCursor
-            return [dict(row) for row in results]
-        else:
-            # SQLite - convert Rows to dicts
-            return [dict(row) for row in results]
+        # Convert all results to regular dictionaries
+        converted_results = []
+        for row in results:
+            if get_db_config() == 'postgresql':
+                # PostgreSQL: row is already a dict-like object
+                converted_results.append({key: row[key] for key in row.keys()})
+            else:
+                # SQLite - convert Row to dict
+                converted_results.append(dict(row))
+        return converted_results
     return []
 
 def init_db():
