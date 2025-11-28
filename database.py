@@ -175,7 +175,7 @@ def create_sqlite_database():
         
         cursor.execute('''
             INSERT OR IGNORE INTO admins (username, password, email)
-            VALUES ('admin', 'admin123', 'admin@tamaula.com')
+            VALUES ('admin', 'Tama123', 'admin@tamaula.com')
         ''')
         
         cursor.execute('''

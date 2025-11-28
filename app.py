@@ -669,14 +669,15 @@ def competition_details(competition_id):
 
 @app.route('/club/match/<int:match_id>')
 def match_details(match_id):
-    if 'user_id' not in session or session['user_type'] != 'club':
+    if 'user_id' not in session or session.get('user_type') != 'club':
+        flash('Please login as club to access this page.', 'error')
         return redirect(url_for('login'))
     
     conn = get_db_connection()
     try:
         club_id = session['user_id']
         
-        # Get match details
+        # FIXED: Get match details with proper error handling
         match = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
@@ -693,7 +694,7 @@ def match_details(match_id):
             flash('Match not found or access denied.', 'error')
             return redirect(url_for('club_matches'))
         
-        # Get match events (goals, assists)
+        # FIXED: Get match events safely
         events = fetch_all(conn, '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name
@@ -702,23 +703,199 @@ def match_details(match_id):
             JOIN clubs cl ON p.club_id = cl.id
             WHERE me.match_id = ?
             ORDER BY me.minute ASC
-        ''', (match_id,))
+        ''', (match_id,)) or []  # Fallback to empty list
         
-        # Get club's players for this match
+        # FIXED: Get club's players safely
         players = fetch_all(conn, '''
             SELECT p.* 
             FROM players p 
-            WHERE p.club_id = ?
+            WHERE p.club_id = ? AND p.status = 'approved'
             ORDER BY p.fullname
-        ''', (club_id,))
+        ''', (club_id,)) or []  # Fallback to empty list
         
         return render_template('match_details.html', 
                              match=match, 
                              events=events, 
                              players=players)
+                             
     except Exception as e:
         flash(f'Error loading match details: {str(e)}', 'error')
         return redirect(url_for('club_matches'))
+    finally:
+        conn.close()
+
+@app.route('/admin/matches')
+def admin_matches():
+    if not check_admin_session():
+        flash('Please login as admin to access this page.', 'error')
+        return redirect(url_for('admin_login'))
+    
+    conn = get_db_connection()
+    try:
+        # FIXED: Get all matches safely
+        matches = fetch_all(conn, '''
+            SELECT m.*, 
+                   home.name as home_club_name, 
+                   away.name as away_club_name,
+                   c.name as competition_name
+            FROM matches m
+            JOIN clubs home ON m.home_club_id = home.id
+            JOIN clubs away ON m.away_club_id = away.id
+            JOIN competitions c ON m.competition_id = c.id
+            ORDER BY m.match_date DESC, m.match_time DESC
+        ''') or []  # Fallback to empty list
+        
+        # FIXED: Get all clubs safely
+        clubs = fetch_all(conn, 'SELECT id, name FROM clubs WHERE approved = TRUE') or []
+        
+        # FIXED: Get all active competitions safely
+        competitions = fetch_all(conn, 'SELECT id, name FROM competitions WHERE is_active = TRUE') or []
+        
+        return render_template('admin_matches.html', 
+                             matches=matches, 
+                             clubs=clubs, 
+                             competitions=competitions)
+                             
+    except Exception as e:
+        flash(f'Error loading matches: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
+    finally:
+        conn.close()
+
+@app.route('/club/matches')
+def club_matches():
+    if 'user_id' not in session or session.get('user_type') != 'club':
+        flash('Please login as club to access this page.', 'error')
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    try:
+        club_id = session['user_id']
+        
+        # FIXED: Get matches for this club safely
+        matches = fetch_all(conn, '''
+            SELECT m.*, 
+                   home.name as home_club_name, 
+                   away.name as away_club_name,
+                   c.name as competition_name
+            FROM matches m
+            JOIN clubs home ON m.home_club_id = home.id
+            JOIN clubs away ON m.away_club_id = away.id
+            JOIN competitions c ON m.competition_id = c.id
+            WHERE (m.home_club_id = ? OR m.away_club_id = ?)
+            ORDER BY m.match_date DESC, m.match_time DESC
+        ''', (club_id, club_id)) or []  # Fallback to empty list
+        
+        return render_template('club_matches.html', matches=matches)
+        
+    except Exception as e:
+        flash(f'Error loading matches: {str(e)}', 'error')
+        return redirect(url_for('club_dashboard'))
+    finally:
+        conn.close()
+
+@app.route('/admin/create_match', methods=['POST'])
+def create_match():
+    if not check_admin_session():
+        return jsonify({'success': False, 'message': 'Unauthorized'})
+    
+    conn = get_db_connection()
+    try:
+        # FIXED: Safe form data access with defaults
+        competition_id = request.form.get('competition_id', '').strip()
+        home_club_id = request.form.get('home_club_id', '').strip()
+        away_club_id = request.form.get('away_club_id', '').strip()
+        match_date = request.form.get('match_date', '').strip()
+        match_time = request.form.get('match_time', '').strip()
+        location = request.form.get('location', '').strip()
+        
+        # FIXED: Validate required fields
+        if not all([competition_id, home_club_id, away_club_id, match_date, match_time]):
+            return jsonify({'success': False, 'message': 'All required fields must be filled'})
+        
+        # Check if clubs are different
+        if home_club_id == away_club_id:
+            return jsonify({'success': False, 'message': 'Home and away clubs cannot be the same'})
+        
+        # FIXED: Create match with error handling
+        execute_sql(conn, '''
+            INSERT INTO matches (competition_id, home_club_id, away_club_id, match_date, match_time, location, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
+        ''', (competition_id, home_club_id, away_club_id, match_date, match_time, location))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Match created successfully'})
+    
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': f'Error creating match: {str(e)}'})
+    finally:
+        conn.close()
+
+@app.route('/admin/update_match_score/<int:match_id>', methods=['POST'])
+def update_match_score(match_id):
+    if not check_admin_session():
+        return jsonify({'success': False, 'message': 'Unauthorized'})
+    
+    conn = get_db_connection()
+    try:
+        # FIXED: Safe form data access with defaults
+        home_score = request.form.get('home_score', 0)
+        away_score = request.form.get('away_score', 0)
+        status = request.form.get('status', 'scheduled')
+        
+        # FIXED: Convert scores to integers safely
+        try:
+            home_score = int(home_score)
+            away_score = int(away_score)
+        except (ValueError, TypeError):
+            home_score = 0
+            away_score = 0
+        
+        execute_sql(conn, '''
+            UPDATE matches 
+            SET home_score = ?, away_score = ?, status = ?
+            WHERE id = ?
+        ''', (home_score, away_score, status, match_id))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Match score updated successfully'})
+    
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': f'Error updating score: {str(e)}'})
+    finally:
+        conn.close()
+
+@app.route('/admin/get_match_events/<int:match_id>', methods=['GET'])
+def admin_get_match_events(match_id):
+    if not check_admin_session():
+        return jsonify([])
+    
+    conn = get_db_connection()
+    try:
+        events = fetch_all(conn, '''
+            SELECT me.*, p.fullname as player_name, p.jersey_number, c.name as club_name
+            FROM match_events me
+            JOIN players p ON me.player_id = p.id
+            JOIN clubs c ON p.club_id = c.id
+            WHERE me.match_id = ?
+            ORDER BY me.minute ASC
+        ''', (match_id,)) or []  # Fallback to empty list
+        
+        # FIXED: Convert all events to dictionaries safely
+        events_list = []
+        for event in events:
+            try:
+                events_list.append(dict(event))
+            except Exception:
+                continue  # Skip invalid events
+                
+        return jsonify(events_list)
+    
+    except Exception as e:
+        print(f"Error getting match events: {e}")
+        return jsonify([])
     finally:
         conn.close()
 
@@ -1106,155 +1283,6 @@ def admin_activate_club(club_id):
     
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/matches')
-def admin_matches():
-    if 'admin_id' not in session or session.get('user_type') != 'admin':
-        return redirect(url_for('admin_login'))
-    
-    conn = get_db_connection()
-    try:
-        # Get all matches
-        matches = fetch_all(conn, '''
-            SELECT m.*, 
-                   home.name as home_club_name, 
-                   away.name as away_club_name,
-                   c.name as competition_name
-            FROM matches m
-            JOIN clubs home ON m.home_club_id = home.id
-            JOIN clubs away ON m.away_club_id = away.id
-            JOIN competitions c ON m.competition_id = c.id
-            ORDER BY m.match_date DESC
-        ''')
-        
-        # Get all clubs for dropdown
-        clubs = fetch_all(conn, 'SELECT id, name FROM clubs')
-        
-        # Get all active competitions for dropdown
-        competitions = fetch_all(conn, 'SELECT id, name FROM competitions WHERE is_active = TRUE')
-        
-        return render_template('admin_matches.html', 
-                             matches=matches, 
-                             clubs=clubs, 
-                             competitions=competitions)
-    except Exception as e:
-        flash(f'Error loading matches: {str(e)}', 'error')
-        return redirect(url_for('admin_dashboard'))
-    finally:
-        conn.close()
-
-@app.route('/club/matches')
-def club_matches():
-    if 'user_id' not in session or session['user_type'] != 'club':
-        return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    try:
-        club_id = session['user_id']
-        
-        # Get matches for this club
-        matches = fetch_all(conn, '''
-            SELECT m.*, 
-                   home.name as home_club_name, 
-                   away.name as away_club_name,
-                   c.name as competition_name
-            FROM matches m
-            JOIN clubs home ON m.home_club_id = home.id
-            JOIN clubs away ON m.away_club_id = away.id
-            JOIN competitions c ON m.competition_id = c.id
-            WHERE (m.home_club_id = ? OR m.away_club_id = ?)
-            ORDER BY m.match_date DESC
-        ''', (club_id, club_id))
-        
-        return render_template('club_matches.html', matches=matches)
-    except Exception as e:
-        flash(f'Error loading matches: {str(e)}', 'error')
-        return redirect(url_for('club_dashboard'))
-    finally:
-        conn.close()
-
-@app.route('/admin/create_match', methods=['POST'])
-def create_match():
-    if 'admin_id' not in session or session.get('user_type') != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'})
-    
-    conn = get_db_connection()
-    try:
-        competition_id = request.form['competition_id']
-        home_club_id = request.form['home_club_id']
-        away_club_id = request.form['away_club_id']
-        match_date = request.form['match_date']
-        match_time = request.form['match_time']
-        location = request.form.get('location', '')
-        
-        # Check if clubs are different
-        if home_club_id == away_club_id:
-            return jsonify({'success': False, 'message': 'Home and away clubs cannot be the same'})
-        
-        # Create match
-        execute_sql(conn, '''
-            INSERT INTO matches (competition_id, home_club_id, away_club_id, match_date, match_time, location, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
-        ''', (competition_id, home_club_id, away_club_id, match_date, match_time, location))
-        
-        conn.commit()
-        return jsonify({'success': True, 'message': 'Match created successfully'})
-    
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'success': False, 'message': str(e)})
-    finally:
-        conn.close()
-
-@app.route('/admin/update_match_score/<int:match_id>', methods=['POST'])
-def update_match_score(match_id):
-    if 'admin_id' not in session or session.get('user_type') != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'})
-    
-    conn = get_db_connection()
-    try:
-        home_score = request.form['home_score']
-        away_score = request.form['away_score']
-        status = request.form['status']
-        
-        execute_sql(conn, '''
-            UPDATE matches 
-            SET home_score = ?, away_score = ?, status = ?
-            WHERE id = ?
-        ''', (home_score, away_score, status, match_id))
-        
-        conn.commit()
-        return jsonify({'success': True, 'message': 'Match score updated successfully'})
-    
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'success': False, 'message': str(e)})
-    finally:
-        conn.close()
-
-@app.route('/admin/get_match_events/<int:match_id>', methods=['GET'])
-def admin_get_match_events(match_id):
-    if 'admin_id' not in session or session.get('user_type') != 'admin':
-        return jsonify([])
-    
-    conn = get_db_connection()
-    try:
-        events = fetch_all(conn, '''
-            SELECT me.*, p.fullname as player_name, p.jersey_number, c.name as club_name
-            FROM match_events me
-            JOIN players p ON me.player_id = p.id
-            JOIN clubs c ON p.club_id = c.id
-            WHERE me.match_id = ?
-            ORDER BY me.minute ASC
-        ''', (match_id,))
-        
-        events_list = [dict(event) for event in events]
-        return jsonify(events_list)
-    
-    except Exception as e:
-        print(f"Error getting match events: {e}")
-        return jsonify([])
-    finally:
-        conn.close()
 
 @app.route('/admin/create_competition', methods=['GET', 'POST'])
 def admin_create_competition():
