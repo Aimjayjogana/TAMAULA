@@ -10,7 +10,7 @@
         <p>Status: <strong>{{ match.status|title }}</strong></p>
         {% if match.status == 'completed' %}
         <p>Final Score: <strong>{{ match.home_score }} - {{ match.away_score }}</strong></p>
-        <p><strong>Date & Time:</strong>{{ match.match_date }} at {{ match.match_time if match.match_time else 'Time TBA'}}</p>
+        <p><strong>Date & Time:</strong> {{ match.match_date }} at {{ match.match_time if match.match_time else 'Time TBA' }}</p>
         {% endif %}
     </div>
 
