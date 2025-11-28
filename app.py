@@ -677,25 +677,28 @@ def match_details(match_id):
     try:
         club_id = session['user_id']
         
-        match = fetch_one(conn, '''
+        # Get match details
+        match_result = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
-                   home.logo as home_club_logo,
                    away.name as away_club_name,
-                   away.logo as away_club_logo,
                    c.name as competition_name
             FROM matches m
             JOIN clubs home ON m.home_club_id = home.id
             JOIN clubs away ON m.away_club_id = away.id
             JOIN competitions c ON m.competition_id = c.id
-            WHERE m.id = ? AND (m.home_club_id = ? OR m.away_club_id = ?)
-        ''', (match_id, club_id, club_id))
+            WHERE m.id = ?
+        ''', (match_id,))
         
-        if not match:
-            flash('Match not found or access denied.', 'error')
+        if not match_result:
+            flash('Match not found.', 'error')
             return redirect(url_for('club_matches'))
         
-        events = fetch_all(conn, '''
+        # Convert to dict
+        match = dict(match_result)
+        
+        # Get match events (exactly what your template needs)
+        events_result = fetch_all(conn, '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name
             FROM match_events me
@@ -705,48 +708,14 @@ def match_details(match_id):
             ORDER BY me.minute ASC
         ''', (match_id,)) or []
         
-        home_lineup = fetch_all(conn, '''
-            SELECT p.fullname, p.jersey_number, l.position
-            FROM lineups l
-            JOIN players p ON l.player_id = p.id
-            WHERE l.club_id = ? AND l.competition_id = ?
-            ORDER BY 
-                CASE l.position
-                    WHEN 'Goalkeeper' THEN 1
-                    WHEN 'Defender' THEN 2
-                    WHEN 'Midfielder' THEN 3
-                    WHEN 'Forward' THEN 4
-                    WHEN 'Substitute' THEN 5
-                    ELSE 6
-                END,
-                p.jersey_number
-        ''', (match['home_club_id'], match['competition_id'])) or []
-        
-        away_lineup = fetch_all(conn, '''
-            SELECT p.fullname, p.jersey_number, l.position
-            FROM lineups l
-            JOIN players p ON l.player_id = p.id
-            WHERE l.club_id = ? AND l.competition_id = ?
-            ORDER BY 
-                CASE l.position
-                    WHEN 'Goalkeeper' THEN 1
-                    WHEN 'Defender' THEN 2
-                    WHEN 'Midfielder' THEN 3
-                    WHEN 'Forward' THEN 4
-                    WHEN 'Substitute' THEN 5
-                    ELSE 6
-                END,
-                p.jersey_number
-        ''', (match['away_club_id'], match['competition_id'])) or []
+        events = [dict(event) for event in events_result]
         
         return render_template('match_details.html', 
                              match=match, 
-                             events=events, 
-                             home_lineup=home_lineup,
-                             away_lineup=away_lineup)
+                             events=events)
                              
     except Exception as e:
-        flash('Error loading match details.', 'error')
+        flash(f'Error loading match details: {str(e)}', 'error')
         return redirect(url_for('club_matches'))
     finally:
         conn.close()
