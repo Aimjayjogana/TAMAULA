@@ -677,11 +677,13 @@ def match_details(match_id):
     try:
         club_id = session['user_id']
         
-        # FIXED: Get match details with proper error handling
+        # FIXED: Get match details with club logos
         match = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
+                   home.logo as home_club_logo,
                    away.name as away_club_name,
+                   away.logo as away_club_logo,
                    c.name as competition_name
             FROM matches m
             JOIN clubs home ON m.home_club_id = home.id
@@ -703,20 +705,48 @@ def match_details(match_id):
             JOIN clubs cl ON p.club_id = cl.id
             WHERE me.match_id = ?
             ORDER BY me.minute ASC
-        ''', (match_id,)) or []  # Fallback to empty list
+        ''', (match_id,)) or []
         
-        # FIXED: Get club's players safely
-        players = fetch_all(conn, '''
-            SELECT p.* 
-            FROM players p 
-            WHERE p.club_id = ? AND p.status = 'approved'
-            ORDER BY p.fullname
-        ''', (club_id,)) or []  # Fallback to empty list
+        # FIXED: Get lineups for both teams
+        home_lineup = fetch_all(conn, '''
+            SELECT p.fullname, p.jersey_number, l.position
+            FROM lineups l
+            JOIN players p ON l.player_id = p.id
+            WHERE l.club_id = ? AND l.competition_id = ?
+            ORDER BY 
+                CASE l.position
+                    WHEN 'Goalkeeper' THEN 1
+                    WHEN 'Defender' THEN 2
+                    WHEN 'Midfielder' THEN 3
+                    WHEN 'Forward' THEN 4
+                    WHEN 'Substitute' THEN 5
+                    ELSE 6
+                END,
+                p.jersey_number
+        ''', (match['home_club_id'], match['competition_id'])) or []
+        
+        away_lineup = fetch_all(conn, '''
+            SELECT p.fullname, p.jersey_number, l.position
+            FROM lineups l
+            JOIN players p ON l.player_id = p.id
+            WHERE l.club_id = ? AND l.competition_id = ?
+            ORDER BY 
+                CASE l.position
+                    WHEN 'Goalkeeper' THEN 1
+                    WHEN 'Defender' THEN 2
+                    WHEN 'Midfielder' THEN 3
+                    WHEN 'Forward' THEN 4
+                    WHEN 'Substitute' THEN 5
+                    ELSE 6
+                END,
+                p.jersey_number
+        ''', (match['away_club_id'], match['competition_id'])) or []
         
         return render_template('match_details.html', 
                              match=match, 
                              events=events, 
-                             players=players)
+                             home_lineup=home_lineup,
+                             away_lineup=away_lineup)
                              
     except Exception as e:
         flash(f'Error loading match details: {str(e)}', 'error')

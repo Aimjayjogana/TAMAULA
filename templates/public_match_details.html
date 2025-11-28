@@ -24,7 +24,7 @@
             <!-- Match Score & Info -->
             <div>
                 <div style="font-size: 3rem; font-weight: bold; margin-bottom: 1rem;">
-                    {{ match.home_score }} - {{ match.away_score }}
+                    {{ match.home_score or '0' }} - {{ match.away_score or '0' }}
                 </div>
                 <div style="color: var(--gray); margin-bottom: 0.5rem;">
                     {{ match.match_date }} {% if match.match_time %}{{ match.match_time }}{% endif %}
@@ -35,7 +35,7 @@
                 <div style="color: {% if match.status == 'completed' %}green
                                  {% elif match.status == 'ongoing' %}orange
                                  {% else %}blue{% endif %}; font-weight: 500;">
-                    {{ match.status|title }}
+                    {{ match.status|title if match.status else 'Scheduled' }}
                 </div>
             </div>
 
@@ -65,10 +65,10 @@
                                       {% elif event.event_type == 'assist' %}blue
                                       {% elif event.event_type == 'yellow_card' %}orange
                                       {% else %}red{% endif %}; font-weight: 500;">
-                        {{ event.event_type|title|replace('_', ' ') }}
+                        {{ event.event_type|title|replace('_', ' ') if event.event_type else 'Event' }}
                     </span>
-                    <span>{{ event.player_name }} (#{{ event.jersey_number }})</span>
-                    <span style="color: var(--gray); font-size: 0.9rem;">{{ event.club_name }}</span>
+                    <span>{{ event.player_name or 'Player' }} {% if event.jersey_number %}(#{{ event.jersey_number }}){% endif %}</span>
+                    <span style="color: var(--gray); font-size: 0.9rem;">{{ event.club_name or '' }}</span>
                     {% if event.description %}
                     <span style="color: var(--gray); font-size: 0.9rem;">- {{ event.description }}</span>
                     {% endif %}
@@ -76,6 +76,11 @@
             </div>
             {% endfor %}
         </div>
+    </div>
+    {% else %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Match Events</h3>
+        <p style="text-align: center; color: var(--gray); padding: 1rem;">No events recorded for this match yet.</p>
     </div>
     {% endif %}
 
@@ -97,9 +102,9 @@
                     <tbody>
                         {% for player in home_lineup %}
                         <tr>
-                            <td>{{ player.position }}</td>
+                            <td>{{ player.position or 'N/A' }}</td>
                             <td>{{ player.fullname }}</td>
-                            <td>#{{ player.jersey_number }}</td>
+                            <td>#{{ player.jersey_number or 'N/A' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -126,9 +131,9 @@
                     <tbody>
                         {% for player in away_lineup %}
                         <tr>
-                            <td>{{ player.position }}</td>
+                            <td>{{ player.position or 'N/A' }}</td>
                             <td>{{ player.fullname }}</td>
-                            <td>#{{ player.jersey_number }}</td>
+                            <td>#{{ player.jersey_number or 'N/A' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -161,7 +166,7 @@
                 <span style="color: {% if match.status == 'completed' %}green
                                   {% elif match.status == 'ongoing' %}orange
                                   {% else %}blue{% endif %};">
-                    {{ match.status|title }}
+                    {{ match.status|title if match.status else 'Scheduled' }}
                 </span>
             </div>
         </div>
