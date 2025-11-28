@@ -675,8 +675,8 @@ def match_details(match_id):
     
     conn = get_db_connection()
     try:
-        # Get match with safe data access
-        match_data = fetch_one(conn, '''
+        # Get match details with safe wrapper
+        match_query = '''
             SELECT m.*, 
                    home.name as home_club_name, 
                    away.name as away_club_name,
@@ -686,27 +686,16 @@ def match_details(match_id):
             JOIN clubs away ON m.away_club_id = away.id
             JOIN competitions c ON m.competition_id = c.id
             WHERE m.id = ?
-        ''', (match_id,))
+        '''
+        match_result = fetch_one(conn, match_query, (match_id,))
         
-        if not match_data:
+        # Safe check for None result
+        if match_result is None:
             flash('Match not found.', 'error')
             return redirect(url_for('club_matches'))
         
-        # Convert to dict with safe defaults
-        match = {
-            'id': match_data.get('id'),
-            'home_club_name': match_data.get('home_club_name', 'Unknown Club'),
-            'away_club_name': match_data.get('away_club_name', 'Unknown Club'),
-            'competition_name': match_data.get('competition_name', 'Unknown Competition'),
-            'status': match_data.get('status', 'scheduled'),
-            'home_score': match_data.get('home_score', 0),
-            'away_score': match_data.get('away_score', 0),
-            'match_date': match_data.get('match_date', 'Date TBA'),
-            'match_time': match_data.get('match_time')
-        }
-        
-        # Get events with safe data access
-        events_data = fetch_all(conn, '''
+        # Get match events with safe wrapper
+        events_query = '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name
             FROM match_events me
@@ -714,21 +703,14 @@ def match_details(match_id):
             JOIN clubs cl ON p.club_id = cl.id
             WHERE me.match_id = ?
             ORDER BY me.minute ASC
-        ''', (match_id,)) or []
+        '''
+        events_result = fetch_all(conn, events_query, (match_id,))
         
-        events = []
-        for event in events_data:
-            events.append({
-                'minute': event.get('minute', 0),
-                'player_name': event.get('player_name', 'Unknown Player'),
-                'jersey_number': event.get('jersey_number'),
-                'club_name': event.get('club_name', 'Unknown Club'),
-                'event_type': event.get('event_type', 'unknown'),
-                'description': event.get('description', '')
-            })
+        # Safe check for None result
+        events = events_result if events_result is not None else []
         
         return render_template('match_details.html', 
-                             match=match, 
+                             match=match_result, 
                              events=events)
                              
     except Exception as e:
