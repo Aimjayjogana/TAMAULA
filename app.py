@@ -677,7 +677,6 @@ def match_details(match_id):
     try:
         club_id = session['user_id']
         
-        # FIXED: Get match details with club logos
         match = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
@@ -696,7 +695,6 @@ def match_details(match_id):
             flash('Match not found or access denied.', 'error')
             return redirect(url_for('club_matches'))
         
-        # FIXED: Get match events safely
         events = fetch_all(conn, '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name
@@ -707,7 +705,6 @@ def match_details(match_id):
             ORDER BY me.minute ASC
         ''', (match_id,)) or []
         
-        # FIXED: Get lineups for both teams
         home_lineup = fetch_all(conn, '''
             SELECT p.fullname, p.jersey_number, l.position
             FROM lineups l
@@ -749,11 +746,11 @@ def match_details(match_id):
                              away_lineup=away_lineup)
                              
     except Exception as e:
-        flash(f'Error loading match details: {str(e)}', 'error')
+        flash('Error loading match details.', 'error')
         return redirect(url_for('club_matches'))
     finally:
         conn.close()
-
+        
 @app.route('/admin/matches')
 def admin_matches():
     if not check_admin_session():
