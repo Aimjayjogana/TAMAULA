@@ -675,10 +675,8 @@ def match_details(match_id):
     
     conn = get_db_connection()
     try:
-        club_id = session['user_id']
-        
-        # Get match details
-        match_result = fetch_one(conn, '''
+        # Get match with safe data access
+        match_data = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
                    away.name as away_club_name,
@@ -690,15 +688,25 @@ def match_details(match_id):
             WHERE m.id = ?
         ''', (match_id,))
         
-        if not match_result:
+        if not match_data:
             flash('Match not found.', 'error')
             return redirect(url_for('club_matches'))
         
-        # Convert to dict
-        match = dict(match_result)
+        # Convert to dict with safe defaults
+        match = {
+            'id': match_data.get('id'),
+            'home_club_name': match_data.get('home_club_name', 'Unknown Club'),
+            'away_club_name': match_data.get('away_club_name', 'Unknown Club'),
+            'competition_name': match_data.get('competition_name', 'Unknown Competition'),
+            'status': match_data.get('status', 'scheduled'),
+            'home_score': match_data.get('home_score', 0),
+            'away_score': match_data.get('away_score', 0),
+            'match_date': match_data.get('match_date', 'Date TBA'),
+            'match_time': match_data.get('match_time')
+        }
         
-        # Get match events (exactly what your template needs)
-        events_result = fetch_all(conn, '''
+        # Get events with safe data access
+        events_data = fetch_all(conn, '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name
             FROM match_events me
@@ -708,14 +716,23 @@ def match_details(match_id):
             ORDER BY me.minute ASC
         ''', (match_id,)) or []
         
-        events = [dict(event) for event in events_result]
+        events = []
+        for event in events_data:
+            events.append({
+                'minute': event.get('minute', 0),
+                'player_name': event.get('player_name', 'Unknown Player'),
+                'jersey_number': event.get('jersey_number'),
+                'club_name': event.get('club_name', 'Unknown Club'),
+                'event_type': event.get('event_type', 'unknown'),
+                'description': event.get('description', '')
+            })
         
         return render_template('match_details.html', 
                              match=match, 
                              events=events)
                              
     except Exception as e:
-        flash(f'Error loading match details: {str(e)}', 'error')
+        flash('Error loading match details.', 'error')
         return redirect(url_for('club_matches'))
     finally:
         conn.close()
