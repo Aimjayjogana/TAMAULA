@@ -93,11 +93,6 @@ def index():
 def serve_player_profiles(filename):
     return send_from_directory('static/images/uploads/', filename)
 
-# This serves all other uploads
-@app.route('/static/images/uploads/<path:filename>')
-def serve_uploaded_files(filename):
-    return send_from_directory('static/images/uploads', filename)
-
 @app.route('/fix_upload_paths')
 def fix_upload_paths():
     """Fix player image paths to use consistent structure"""
@@ -676,7 +671,7 @@ def match_details(match_id):
     try:
         club_id = session['user_id']
         
-        # Get match details
+        # Get match details - USE ? PLACEHOLDERS (will be converted to %s for PostgreSQL automatically)
         match = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
@@ -686,7 +681,7 @@ def match_details(match_id):
             JOIN clubs home ON m.home_club_id = home.id
             JOIN clubs away ON m.away_club_id = away.id
             JOIN competitions c ON m.competition_id = c.id
-            WHERE m.id = %s AND (m.home_club_id = %s OR m.away_club_id = %s)
+            WHERE m.id = ? AND (m.home_club_id = ? OR m.away_club_id = ?)
         ''', (match_id, club_id, club_id))
         
         if not match:
@@ -700,7 +695,7 @@ def match_details(match_id):
             FROM match_events me
             JOIN players p ON me.player_id = p.id
             JOIN clubs cl ON p.club_id = cl.id
-            WHERE me.match_id = %s
+            WHERE me.match_id = ?
             ORDER BY me.minute ASC
         ''', (match_id,))
         
@@ -708,7 +703,7 @@ def match_details(match_id):
         players = fetch_all(conn, '''
             SELECT p.* 
             FROM players p 
-            WHERE p.club_id = %s
+            WHERE p.club_id = ?
             ORDER BY p.fullname
         ''', (club_id,))
         
@@ -718,7 +713,7 @@ def match_details(match_id):
                              players=players)
                              
     except Exception as e:
-        flash('Error loading match details.', 'error')
+        flash(f'Error loading match details: {str(e)}', 'error')
         return redirect(url_for('club_matches'))
     finally:
         conn.close()
@@ -2195,7 +2190,7 @@ def public_match_details(match_id):
     """Public match details page accessible to all users"""
     conn = get_db_connection()
     try:
-        # Get match details
+        # Get match details - USE ? PLACEHOLDERS
         match = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
@@ -2214,7 +2209,7 @@ def public_match_details(match_id):
             flash('Match not found.', 'error')
             return redirect(url_for('index'))
         
-        # Get match events (goals, assists, cards)
+        # Get match events
         events = fetch_all(conn, '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name, cl.id as club_id
@@ -2269,8 +2264,6 @@ def public_match_details(match_id):
         return redirect(url_for('index'))
     finally:
         conn.close()
-
-
 
 @app.route('/get_lineup/<int:competition_id>')
 def get_lineup(competition_id):

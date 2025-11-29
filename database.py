@@ -26,7 +26,6 @@ def get_db_connection():
     
     if db_type == 'postgresql':
         try:
-            # Import psycopg2 only when needed (for PostgreSQL)
             import psycopg2
             from psycopg2.extras import RealDictCursor
             
@@ -38,7 +37,6 @@ def get_db_connection():
             return get_sqlite_connection()
         except Exception as e:
             print(f"❌ PostgreSQL connection failed: {e}")
-            # In production, we should not fall back to SQLite
             raise e
     else:
         return get_sqlite_connection()
@@ -71,33 +69,48 @@ def execute_sql(conn, sql, params=None):
         return cursor
     except Exception as e:
         conn.rollback()
+        print(f"❌ SQL Error in execute_sql: {e}")
+        print(f"   SQL: {sql}")
+        print(f"   Params: {params}")
         raise e
 
 def fetch_one(conn, sql, params=None):
     """Fetch one row"""
-    cursor = execute_sql(conn, sql, params)
-    result = cursor.fetchone()
-    cursor.close()
-    
-    if result:
-        if get_db_config() == 'postgresql':
-            return dict(result)
-        else:
-            return dict(result)
-    return None
+    try:
+        cursor = execute_sql(conn, sql, params)
+        result = cursor.fetchone()
+        cursor.close()
+        
+        if result:
+            if get_db_config() == 'postgresql':
+                return dict(result)
+            else:
+                return dict(result)
+        return None
+    except Exception as e:
+        print(f"❌ Error in fetch_one: {e}")
+        print(f"   SQL: {sql}")
+        print(f"   Params: {params}")
+        return None
 
 def fetch_all(conn, sql, params=None):
     """Fetch all rows"""
-    cursor = execute_sql(conn, sql, params)
-    results = cursor.fetchall()
-    cursor.close()
-    
-    if results:
-        if get_db_config() == 'postgresql':
-            return [dict(row) for row in results]
-        else:
-            return [dict(row) for row in results]
-    return []
+    try:
+        cursor = execute_sql(conn, sql, params)
+        results = cursor.fetchall()
+        cursor.close()
+        
+        if results:
+            if get_db_config() == 'postgresql':
+                return [dict(row) for row in results]
+            else:
+                return [dict(row) for row in results]
+        return []
+    except Exception as e:
+        print(f"❌ Error in fetch_all: {e}")
+        print(f"   SQL: {sql}")
+        print(f"   Params: {params}")
+        return []
 
 def init_db():
     """Initialize the appropriate database based on environment"""
