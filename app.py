@@ -669,14 +669,15 @@ def competition_details(competition_id):
 
 @app.route('/club/match/<int:match_id>')
 def match_details(match_id):
-    if 'user_id' not in session or session.get('user_type') != 'club':
-        flash('Please login as club to access this page.', 'error')
+    if 'user_id' not in session or session['user_type'] != 'club':
         return redirect(url_for('login'))
     
     conn = get_db_connection()
     try:
-        # Get match details with safe wrapper
-        match_query = '''
+        club_id = session['user_id']
+        
+        # Get match details
+        match = fetch_one(conn, '''
             SELECT m.*, 
                    home.name as home_club_name, 
                    away.name as away_club_name,
@@ -685,33 +686,36 @@ def match_details(match_id):
             JOIN clubs home ON m.home_club_id = home.id
             JOIN clubs away ON m.away_club_id = away.id
             JOIN competitions c ON m.competition_id = c.id
-            WHERE m.id = ?
-        '''
-        match_result = fetch_one(conn, match_query, (match_id,))
+            WHERE m.id = %s AND (m.home_club_id = %s OR m.away_club_id = %s)
+        ''', (match_id, club_id, club_id))
         
-        # Safe check for None result
-        if match_result is None:
-            flash('Match not found.', 'error')
+        if not match:
+            flash('Match not found or access denied.', 'error')
             return redirect(url_for('club_matches'))
         
-        # Get match events with safe wrapper
-        events_query = '''
+        # Get match events
+        events = fetch_all(conn, '''
             SELECT me.*, p.fullname as player_name, p.jersey_number,
                    cl.name as club_name
             FROM match_events me
             JOIN players p ON me.player_id = p.id
             JOIN clubs cl ON p.club_id = cl.id
-            WHERE me.match_id = ?
+            WHERE me.match_id = %s
             ORDER BY me.minute ASC
-        '''
-        events_result = fetch_all(conn, events_query, (match_id,))
+        ''', (match_id,))
         
-        # Safe check for None result
-        events = events_result if events_result is not None else []
+        # Get club's players
+        players = fetch_all(conn, '''
+            SELECT p.* 
+            FROM players p 
+            WHERE p.club_id = %s
+            ORDER BY p.fullname
+        ''', (club_id,))
         
         return render_template('match_details.html', 
-                             match=match_result, 
-                             events=events)
+                             match=match, 
+                             events=events, 
+                             players=players)
                              
     except Exception as e:
         flash('Error loading match details.', 'error')

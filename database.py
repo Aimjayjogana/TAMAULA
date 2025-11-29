@@ -65,51 +65,38 @@ def execute_sql(conn, sql, params=None):
         if params is None:
             cursor.execute(sql)
         else:
-            # Ensure params is properly formatted
             if not isinstance(params, (tuple, list)):
                 params = (params,)
             cursor.execute(sql, params)
         return cursor
     except Exception as e:
-        print(f"❌ SQL Error: {e}")
-        print(f"   SQL: {sql}")
-        print(f"   Params: {params}")
         conn.rollback()
         raise e
 
 def fetch_one(conn, sql, params=None):
-    """Fetch one row - converts to dictionary"""
+    """Fetch one row"""
     cursor = execute_sql(conn, sql, params)
     result = cursor.fetchone()
     cursor.close()
     
     if result:
-        # For both databases, convert to regular dictionary
         if get_db_config() == 'postgresql':
-            # PostgreSQL: result is already a dict-like object from RealDictCursor
-            return {key: result[key] for key in result.keys()}
+            return dict(result)
         else:
-            # SQLite - convert Row to dict
             return dict(result)
     return None
 
 def fetch_all(conn, sql, params=None):
-    """Fetch all rows - converts to list of dictionaries"""
+    """Fetch all rows"""
     cursor = execute_sql(conn, sql, params)
     results = cursor.fetchall()
     cursor.close()
     
     if results:
-        # Convert all results to regular dictionaries
-        converted_results = []
-        for row in results:
-            if get_db_config() == 'postgresql':
-                # PostgreSQL: row is already a dict-like object
-                converted_results.append({key: row[key] for key in row.keys()})
-            else:
-                # SQLite - convert Row to dict
-                converted_results.append(dict(row))
-        return converted_results
+        if get_db_config() == 'postgresql':
+            return [dict(row) for row in results]
+        else:
+            return [dict(row) for row in results]
     return []
 
 def init_db():
