@@ -20,6 +20,7 @@
                     <th>Location</th>
                     <th>Status</th>
                     <th>Score</th>
+                    <th>ML Prediction</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -57,10 +58,44 @@
                         </span>
                     </td>
                     <td style="font-weight: bold; font-size: 1.1rem;">
-                        {{ match.home_score }} - {{ match.away_score }}
+                        {% if match.status == 'completed' %}
+                            {{ match.home_score }} - {{ match.away_score }}
+                        {% else %}
+                            —
+                        {% endif %}
                     </td>
-                    <td>
-                        <a href="{{ url_for('public_match_details', match_id=match.id) }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                    
+                    <!-- ML Prediction Column -->
+                    <td style="min-width: 150px;">
+                        {% if match.status == 'scheduled' %}
+                            {% if match.prediction and match.prediction.outcome != 'N/A' %}
+                                <div class="prediction-container">
+                                    <div class="prediction-result" style="font-weight: bold; margin-bottom: 5px;">
+                                        {{ match.prediction.outcome }}
+                                        <span style="font-size: 0.75rem; color: var(--gray);">({{ match.prediction.confidence }}%)</span>
+                                    </div>
+                                    <div class="prediction-probabilities" style="display: flex; gap: 5px; font-size: 0.7rem;">
+                                        <span style="background: #28a745; padding: 2px 6px; border-radius: 3px; color: white;">
+                                            H: {{ match.prediction.probabilities.home }}%
+                                        </span>
+                                        <span style="background: #6c757d; padding: 2px 6px; border-radius: 3px; color: white;">
+                                            D: {{ match.prediction.probabilities.draw }}%
+                                        </span>
+                                        <span style="background: #dc3545; padding: 2px 6px; border-radius: 3px; color: white;">
+                                            A: {{ match.prediction.probabilities.away }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span style="color: var(--gray); font-size: 0.8rem;">Loading prediction...</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: var(--gray); font-size: 0.8rem;">—</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="text-align: center;">
+                        <a href="{{ url_for('public_match_details', match_id=match.id) }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; text-decoration: none;">
                             View Details
                         </a>
                     </td>
@@ -83,6 +118,22 @@
     vertical-align: middle;
 }
 
+.prediction-container {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.prediction-result {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.prediction-probabilities {
+    justify-content: center;
+}
+
 @media (max-width: 768px) {
     .data-table {
         font-size: 0.8rem;
@@ -90,6 +141,16 @@
     
     .data-table td:nth-child(3) {
         min-width: 150px;
+    }
+    
+    .prediction-probabilities {
+        flex-direction: column;
+        gap: 3px !important;
+    }
+    
+    .prediction-probabilities span {
+        display: inline-block;
+        text-align: center;
     }
 }
 </style>

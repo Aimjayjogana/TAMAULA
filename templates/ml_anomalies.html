@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Match Anomalies - TAMAULA ML Analytics{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>⚠️ Match Anomaly Detection</h1>
+        <p>Unsupervised learning identifies unusual and unexpected match results</p>
+    </div>
+
+    {% if anomalies %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 1.5rem;">
+        {% for anomaly in anomalies %}
+        <div class="card" style="border: 2px solid {% if anomaly.anomaly_score > 0.8 %}#ef4444{% else %}#f59e0b{% endif %};">
+            <!-- Anomaly Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <span class="badge" style="background: {{ anomaly.match.competition == 'Kano State Football League' ? '#3b82f6' : '#10b981' }}; color: white;">
+                    {{ anomaly.match.competition }}
+                </span>
+                <span style="color: #ef4444; font-weight: bold; font-size: 1.1rem;">
+                    ⚠️ {{ "%.0f"|format(anomaly.anomaly_score * 100) }}% anomalous
+                </span>
+            </div>
+            
+            <!-- Teams -->
+            <h3 style="text-align: center; margin: 1rem 0;">{{ anomaly.match.home_club }} vs {{ anomaly.match.away_club }}</h3>
+            
+            <!-- Score -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin: 1.5rem 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold;">{{ anomaly.match.home_score }}</div>
+                </div>
+                <div style="font-size: 2rem; color: var(--gray);">-</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold;">{{ anomaly.match.away_score }}</div>
+                </div>
+            </div>
+            
+            <!-- Anomaly Reason -->
+            <div class="card" style="background: #fef2f2; border: 1px solid #fee2e2; margin: 1rem 0;">
+                <strong style="color: #b91c1c;">Why this is anomalous:</strong>
+                <p style="margin-top: 0.5rem; color: #7f1d1d;">{{ anomaly.reason }}</p>
+            </div>
+            
+            <!-- Match Details -->
+            <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 0.9rem; margin-bottom: 1rem;">
+                <span>📅 {{ anomaly.match.match_date }}</span>
+                <span>📍 {{ anomaly.match.location or 'TBA' }}</span>
+            </div>
+            
+            <!-- Actions -->
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{{ url_for('public_match_details', match_id=anomaly.match.id) }}" class="btn" style="flex: 2;">
+                    View Match Details
+                </a>
+                <a href="{{ url_for('ml_similar_matches', match_id=anomaly.match.id) }}" class="btn" style="flex: 1; background: var(--accent);">
+                    🔍 Similar
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
+        <h3>No Anomalies Detected</h3>
+        <p style="color: var(--gray);">All matches follow expected patterns, or there's not enough historical data yet.</p>
+        <p class="text-muted">Add more matches and results to see anomaly detection in action.</p>
+    </div>
+    {% endif %}
+
+    <!-- Anomaly Detection Explanation -->
+    <div class="card" style="background: #f8fafc; margin-top: 2rem;">
+        <h4>🔬 How Anomaly Detection Works</h4>
+        <p>The system automatically identifies unusual matches by analyzing:</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="display: flex; gap: 1rem;">
+                <div style="font-size: 2rem;">🔄</div>
+                <div>
+                    <strong>Upsets</strong>
+                    <p style="font-size: 0.9rem; color: var(--gray);">Lower-ranked teams beating higher-ranked ones based on cluster analysis</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <div style="font-size: 2rem;">⚽⚽⚽</div>
+                <div>
+                    <strong>High-Scoring Games</strong>
+                    <p style="font-size: 0.9rem; color: var(--gray);">Matches with 5+ total goals, deviating from average scores</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <div style="font-size: 2rem;">📈</div>
+                <div>
+                    <strong>Dominant Performances</strong>
+                    <p style="font-size: 0.9rem; color: var(--gray);">Wins by 4+ goal margin, showing unusual dominance</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <div style="font-size: 2rem;">🤖</div>
+                <div>
+                    <strong>Pattern Breaks</strong>
+                    <p style="font-size: 0.9rem; color: var(--gray);">Results that don't fit typical team behavior patterns</p>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-muted" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <strong>Note:</strong> Anomaly score ranges from 0-1, with scores above 0.6 considered anomalous. Higher scores indicate more unusual matches.
+        </p>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    background: var(--primary, #667eea);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    text-align: center;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: var(--primary-dark, #5a67d8);
+}
+
+.dashboard-header h1 {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}

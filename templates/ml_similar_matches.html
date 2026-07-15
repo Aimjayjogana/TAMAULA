@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Similar Matches - TAMAULA{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>🔍 Similar Matches</h1>
+        <p>Finding matches with similar patterns using unsupervised learning</p>
+    </div>
+
+    <!-- Current Match -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Current Match</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <div style="text-align: center;">
+                    <h4>{{ match.home_club }}</h4>
+                    <div style="font-size: 2rem;">{{ match.home_score }}</div>
+                </div>
+                <div style="font-size: 1.5rem; color: var(--gray);">VS</div>
+                <div style="text-align: center;">
+                    <h4>{{ match.away_club }}</h4>
+                    <div style="font-size: 2rem;">{{ match.away_score }}</div>
+                </div>
+            </div>
+            <div>
+                <span class="badge">{{ match.competition }}</span>
+                <span class="badge">{{ match.match_date }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Matches -->
+    <h3>Top {{ similar_matches|length }} Most Similar Matches</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        {% for item in similar_matches %}
+        <div class="card" style="border-left: 4px solid hsl({{ loop.index * 60 }}, 70%, 50%);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span class="badge">{{ item.match.competition }}</span>
+                <span style="color: var(--primary); font-weight: 500;">
+                    {{ "%.1f"|format(item.similarity * 100) }}% similar
+                </span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0;">
+                <div style="text-align: center; flex: 1;">
+                    <strong>{{ item.match.home_club }}</strong>
+                    <div>{{ item.match.home_score }}</div>
+                </div>
+                <div style="color: var(--gray);">VS</div>
+                <div style="text-align: center; flex: 1;">
+                    <strong>{{ item.match.away_club }}</strong>
+                    <div>{{ item.match.away_score }}</div>
+                </div>
+            </div>
+            
+            <div style="font-size: 0.9rem; color: var(--gray);">
+                {{ item.match.match_date }}
+            </div>
+            
+            <a href="{{ url_for('public_match_details', match_id=item.match.id) }}" 
+               class="btn" style="margin-top: 1rem; width: 100%;">
+                View Match
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not similar_matches %}
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <h3>No similar matches found</h3>
+        <p>Try adding more matches to the database.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

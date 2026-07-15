@@ -298,6 +298,37 @@
     </div>
 </div>
 
+<!-- Add this button where you want the retrain option -->
+<button onclick="retrainModel()" class="btn btn-info">
+    🔄 Retrain ML Model
+</button>
+
+<!-- Add this JavaScript at the bottom of the template -->
+<script>
+function retrainModel() {
+    if(confirm('Retrain the machine learning model with current data? This may take a few seconds.')) {
+        fetch('/admin/retrain_model', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('❌ Error: ' + error);
+        });
+    }
+}
+</script>
+
 <script>
 let currentAction = '';
 let currentRegistrationId = '';

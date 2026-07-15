@@ -7,6 +7,7 @@ import os
 from werkzeug.utils import secure_filename
 from functools import wraps
 from storage import storage
+from ml.predict import predict_match_outcome
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -1879,6 +1880,23 @@ def update_group_standings(conn, group_id, home_club_id, away_club_id, home_scor
             WHERE group_id = ? AND club_id = ?
         ''', (group_id, away_club_id))
 
+@app.route('/admin/retrain_model', methods=['POST'])
+def admin_retrain_model():
+    """Admin endpoint to retrain the ML model"""
+    if not check_admin_session():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        from ml.train import train_model
+        success = train_model()
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Model retrained successfully!'})
+        else:
+            return jsonify({'success': False, 'message': 'Training failed. Check logs.'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500        
+
 @app.route('/competition/<int:competition_id>/groups')
 def public_competition_groups(competition_id):
     """Public page showing competition groups and standings"""
@@ -2033,8 +2051,23 @@ def public_matches():
             ORDER BY m.match_date DESC, m.match_time DESC
         ''')
         
+        # Add predictions for scheduled matches
+        matches_with_predictions = []
+        for match in matches:
+            match_dict = dict(match)
+            if match['status'] == 'scheduled':
+                try:
+                    prediction = predict_match_outcome(match['home_club_id'], match['away_club_id'])
+                    match_dict['prediction'] = prediction
+                except Exception as e:
+                    print(f"Prediction failed for match {match['id']}: {e}")
+                    match_dict['prediction'] = None
+            else:
+                match_dict['prediction'] = None
+            matches_with_predictions.append(match_dict)
+        
         print(f"✅ Found {len(matches)} matches")
-        return render_template('public_matches.html', matches=matches)
+        return render_template('public_matches.html', matches=matches_with_predictions)
         
     except Exception as e:
         print(f"❌ Error in public_matches: {e}")

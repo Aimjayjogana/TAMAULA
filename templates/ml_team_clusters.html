@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Team Clusters - TAMAULA ML Analytics{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>🤖 Team Clustering Analysis</h1>
+        <p>Unsupervised machine learning groups teams by playing style and performance patterns</p>
+    </div>
+
+    <!-- Cluster Overview Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        {% for cluster_name, cluster_data in cluster_analysis.items() %}
+        <div class="card" style="border-top: 4px solid hsl({{ loop.index * 90 }}, 70%, 50%);">
+            <h3>{{ cluster_name }}</h3>
+            <div style="font-size: 2rem; font-weight: bold; color: hsl({{ loop.index * 90 }}, 70%, 50%); margin: 0.5rem 0;">
+                {{ cluster_data.size }}
+            </div>
+            <p><strong>Teams in this cluster</strong></p>
+            <p style="color: var(--primary); background: #f0f0f0; padding: 0.5rem; border-radius: 5px;">
+                {{ cluster_data.characteristics }}
+            </p>
+            
+            <details style="margin-top: 1rem;">
+                <summary style="cursor: pointer; color: var(--primary);">View teams</summary>
+                <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+                    {% for team in cluster_data.teams %}
+                    <li>{{ team }}</li>
+                    {% endfor %}
+                    {% if cluster_data.size > 5 %}
+                    <li><em>... and {{ cluster_data.size - 5 }} more</em></li>
+                    {% endif %}
+                </ul>
+            </details>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- All Teams with Clusters Table -->
+    <div class="card">
+        <h3>📋 All Teams by Cluster</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Local Government</th>
+                        <th>Cluster</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team in teams %}
+                    <tr>
+                        <td>{{ team.name }}</td>
+                        <td>{{ team.local_government }}</td>
+                        <td>
+                            <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; 
+                                       background: hsl({{ team.cluster * 90 }}, 70%, 90%);
+                                       color: hsl({{ team.cluster * 90 }}, 70%, 30%);
+                                       font-weight: 500;">
+                                Cluster {{ team.cluster }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('ml_team_profile', club_id=team.id) }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                View Profile
+                            </a>
+                            <a href="{{ url_for('clubs') }}?id={{ team.id }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: var(--accent);">
+                                Club Page
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Cluster Visualization (ASCII Art Style) -->
+    <div class="card" style="margin-top: 2rem;">
+        <h4>📊 Cluster Distribution</h4>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end; height: 200px; padding: 1rem 0;">
+            {% for cluster_name, cluster_data in cluster_analysis.items() %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                <div style="height: {{ cluster_data.size * 20 }}px; min-height: 30px; width: 50px; 
+                            background: linear-gradient(to top, hsl({{ loop.index * 90 }}, 70%, 50%), hsl({{ loop.index * 90 }}, 70%, 70%));
+                            border-radius: 5px 5px 0 0;">
+                </div>
+                <span style="margin-top: 0.5rem; font-weight: bold;">{{ cluster_name }}</span>
+                <span style="color: var(--gray);">{{ cluster_data.size }} teams</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ML Explanation -->
+    <div class="card" style="background: #f8fafc; margin-top: 2rem;">
+        <h4>🔬 How Team Clustering Works</h4>
+        <p>Using <strong>K-Means unsupervised learning</strong>, teams are automatically grouped based on:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <div>
+                <span style="font-weight: bold; color: var(--primary);">✓ Win Rate</span><br>
+                <small>Percentage of matches won</small>
+            </div>
+            <div>
+                <span style="font-weight: bold; color: var(--primary);">✓ Goals Scored/Conceded</span><br>
+                <small>Average per match</small>
+            </div>
+            <div>
+                <span style="font-weight: bold; color: var(--primary);">✓ Squad Size</span><br>
+                <small>Number of registered players</small>
+            </div>
+            <div>
+                <span style="font-weight: bold; color: var(--primary);">✓ Player Quality</span><br>
+                <small>Average goals/assists per player</small>
+            </div>
+        </div>
+        <p class="text-muted" style="margin-top: 1rem;">The algorithm finds natural groupings without any pre-defined categories, revealing similar playing styles and performance levels.</p>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.1rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--primary, #667eea);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: var(--primary-dark, #5a67d8);
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.data-table th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.data-table tr:hover {
+    background: #f8fafc;
+}
+
+details summary {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+details ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+details li {
+    padding: 0.25rem 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+</style>
+{% endblock %}

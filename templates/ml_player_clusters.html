@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Player Clusters - TAMAULA ML Analytics{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="dashboard-header">
+        <h1>👥 Player Clustering Analysis</h1>
+        <p>Unsupervised learning categorizes players by their performance patterns</p>
+    </div>
+
+    <!-- Player Cluster Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        {% for cluster_name, cluster_data in player_clusters.items() %}
+        <div class="card" style="border-left: 4px solid 
+            {% if cluster_data.type == 'Star Player' %}#fbbf24
+            {% elif cluster_data.type == 'Goal Scorer' %}#ef4444
+            {% elif cluster_data.type == 'Playmaker' %]#3b82f6
+            {% elif cluster_data.type == 'Attacker' %]#10b981
+            {% else %}#8b5cf6{% endif %};">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>{{ cluster_name }}</h3>
+                <span class="badge" style="background: {% if cluster_data.type == 'Star Player' %}#fbbf24{% else %}#e2e8f0{% endif %};">
+                    {{ cluster_data.size }} players
+                </span>
+            </div>
+            
+            <h4 style="color: var(--primary); margin: 0.5rem 0;">{{ cluster_data.type }}</h4>
+            
+            <div style="display: flex; gap: 1rem; margin: 1rem 0;">
+                <div>
+                    <small>Avg Goals</small>
+                    <div style="font-size: 1.5rem; font-weight: bold;">{{ "%.1f"|format(cluster_data.avg_goals) }}</div>
+                </div>
+                <div>
+                    <small>Avg Assists</small>
+                    <div style="font-size: 1.5rem; font-weight: bold;">{{ "%.1f"|format(cluster_data.avg_assists) }}</div>
+                </div>
+            </div>
+            
+            <details>
+                <summary style="cursor: pointer; color: var(--primary);">Top Players in this Cluster</summary>
+                <ul style="margin-top: 1rem; padding-left: 1rem;">
+                    {% for player in cluster_data.top_players %}
+                    <li style="margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed #f0f0f0;">
+                        <strong>{{ player.name }}</strong>
+                        <span style="color: var(--gray); font-size: 0.9rem;">
+                            ({{ player.goals }} goals, {{ player.assists }} assists)
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </details>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- All Players with Clusters -->
+    <div class="card">
+        <h3>📋 All Players by Cluster</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Club</th>
+                        <th>Goals</th>
+                        <th>Assists</th>
+                        <th>Cluster</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                    <tr>
+                        <td><strong>{{ player.name }}</strong></td>
+                        <td>{{ player.club }}</td>
+                        <td>{{ player.goals }}</td>
+                        <td>{{ player.assists }}</td>
+                        <td>
+                            <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; 
+                                       background: {% if player.cluster == 1 %}#fef3c7{% elif player.cluster == 2 %}#fee2e2{% else %}#dbeafe{% endif %};
+                                       color: {% if player.cluster == 1 %}#d97706{% elif player.cluster == 2 %]#dc2626{% else %}#2563eb{% endif %};">
+                                Cluster {{ player.cluster }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('players') }}?id={{ player.id }}" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                View Profile
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="card" style="background: #f8fafc; margin-top: 2rem;">
+        <h4>🔬 How Player Clustering Works</h4>
+        <p>The algorithm groups players based on:</p>
+        <ul>
+            <li><strong>Goals scored</strong> - Primary attacking contribution</li>
+            <li><strong>Assists provided</strong> - Creative contribution</li>
+            <li><strong>Goal contributions</strong> - Combined attacking impact</li>
+            <li><strong>Discipline</strong> - Yellow/red cards (negative factor)</li>
+        </ul>
+        <p>This reveals natural player types like <strong>Goal Scorers</strong>, <strong>Playmakers</strong>, and <strong>Supporting Players</strong> without any manual labeling.</p>
+    </div>
+</div>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.dashboard-header h1 {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}
